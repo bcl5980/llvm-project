@@ -2457,6 +2457,12 @@ public:
     return isX86VectorCallAggregateSmallEnough(NumMembers);
   }
 
+  ABIArgInfo classifyArgForArm64ECVarArg(QualType Ty) {
+    unsigned FreeSSERegs = 0;
+    return classify(Ty, FreeSSERegs, /*IsReturnType=*/false,
+                    /*IsVectorCall=*/false, /*IsRegCall=*/false);
+  }
+
 private:
   ABIArgInfo classify(QualType Ty, unsigned &FreeSSERegs, bool IsReturnType,
                       bool IsVectorCall, bool IsRegCall) const;
@@ -5755,6 +5761,13 @@ ABIArgInfo
 AArch64ABIInfo::classifyArgumentType(QualType Ty, bool IsVariadic,
                                      unsigned CallingConvention) const {
   Ty = useFirstFieldIfTransparentUnion(Ty);
+
+  if (IsVariadic && getTarget().getTriple().isWindowsArm64EC()) {
+    // Arm64EC varargs functions use the x86_64 classification rules,
+    // not the AArch64 ABI rules.
+    WinX86_64ABIInfo Win64ABIInfo(CGT, X86AVXABILevel::None);
+    return Win64ABIInfo.classifyArgForArm64ECVarArg(Ty);
+  }
 
   // Handle illegal vector types here.
   if (isIllegalVectorType(Ty))
