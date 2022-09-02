@@ -5965,6 +5965,8 @@ CCAssignFn *AArch64TargetLowering::CCAssignFnForCall(CallingConv::ID CC,
     }
     return CC_AArch64_AAPCS;
   case CallingConv::CFGuard_Check:
+    if (Subtarget->isWindowsArm64EC())
+      return CC_AArch64_Arm64EC_CFGuard_Check;
     return CC_AArch64_Win64_CFGuard_Check;
   case CallingConv::AArch64_VectorCall:
   case CallingConv::AArch64_SVE_VectorCall:
@@ -5987,6 +5989,10 @@ AArch64TargetLowering::CCAssignFnForReturn(CallingConv::ID CC) const {
     return RetCC_AArch64_WebKit_JS;
   case CallingConv::ARM64EC_Thunk_X64:
     return RetCC_AArch64_Arm64EC_Thunk;
+  case CallingConv::CFGuard_Check:
+    if (Subtarget->isWindowsArm64EC())
+      return RetCC_AArch64_Arm64EC_CFGuard_Check;
+    return RetCC_AArch64_AAPCS;
   }
 }
 

@@ -327,6 +327,16 @@ def CC_AArch64_Win64_CFGuard_Check : CallingConv<[
   CCIfType<[i64], CCAssignToReg<[X15]>>
 ]>;
 
+let Entry = 1 in
+def CC_AArch64_Arm64EC_CFGuard_Check : CallingConv<[
+  CCIfType<[i64], CCAssignToReg<[X11, X10]>>
+]>;
+
+let Entry = 1 in
+def RetCC_AArch64_Arm64EC_CFGuard_Check : CallingConv<[
+  CCIfType<[i64], CCAssignToReg<[X11]>>
+]>;
+
 
 // Darwin uses a calling convention which differs in only two ways
 // from the standard one at this level:
