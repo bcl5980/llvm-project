@@ -240,6 +240,16 @@ namespace CallingConv {
 
     /// Preserve X2-X15, X19-X29, SP, Z0-Z31, P0-P15.
     AArch64_SME_ABI_Support_Routines_PreserveMost_From_X2 = 103,
+  
+    /// Calling convention used in the ARM64EC ABI to implement calls between
+    /// x64 code and thunks. This is basically the x64 calling convention using
+    /// ARM64 register names. The first parameter is mapped to x9.
+    ARM64EC_Thunk_X64 = 104,
+
+    /// Calling convention used in the ARM64EC ABI to implement calls between
+    /// ARM64 code and thunks. This is just the ARM64 calling convention,
+    /// except that the first parameter is mapped to x9.
+    ARM64EC_Thunk_Native = 105,
 
     /// The highest possible ID. Must be some 2^k - 1.
     MaxID = 1023
