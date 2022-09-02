@@ -299,6 +299,7 @@ public:
     return AnonymousNamespaceHash;
   }
 
+  void mangleArm64ECFnDef(GlobalDecl GD, raw_ostream &) override;
 private:
   void mangleInitFiniStub(const VarDecl *D, char CharCode, raw_ostream &Out);
 };
@@ -361,7 +362,7 @@ public:
 
   void mangle(GlobalDecl GD, StringRef Prefix = "?");
   void mangleName(GlobalDecl GD);
-  void mangleFunctionEncoding(GlobalDecl GD, bool ShouldMangle);
+  void mangleFunctionEncoding(GlobalDecl GD, bool ShouldMangle, bool Arm64ECDef = false);
   void mangleVariableEncoding(const VarDecl *VD);
   void mangleMemberDataPointer(const CXXRecordDecl *RD, const ValueDecl *VD,
                                StringRef Prefix = "$");
@@ -385,6 +386,7 @@ public:
                           bool ForceThisQuals = false,
                           bool MangleExceptionSpec = true);
   void mangleNestedName(GlobalDecl GD);
+  void mangleArm64ECFnDef(GlobalDecl GD);
 
 private:
   bool isStructorDecl(const NamedDecl *ND) const {
@@ -575,7 +577,8 @@ void MicrosoftCXXNameMangler::mangle(GlobalDecl GD, StringRef Prefix) {
 }
 
 void MicrosoftCXXNameMangler::mangleFunctionEncoding(GlobalDecl GD,
-                                                     bool ShouldMangle) {
+                                                     bool ShouldMangle,
+                                                     bool Arm64ECDef) {
   const FunctionDecl *FD = cast<FunctionDecl>(GD.getDecl());
   // <type-encoding> ::= <function-class> <function-type>
 
@@ -599,6 +602,8 @@ void MicrosoftCXXNameMangler::mangleFunctionEncoding(GlobalDecl GD,
     if (FD->isExternC() && FD->hasAttr<OverloadableAttr>())
       Out << "$$J0";
 
+    if (Arm64ECDef)
+      Out << "$$h";
     mangleFunctionClass(FD);
 
     mangleFunctionType(FT, FD, false, false);
@@ -3958,6 +3963,29 @@ void MicrosoftMangleContextImpl::mangleStringLiteral(const StringLiteral *SL,
   }
 
   Mangler.getStream() << '@';
+}
+
+void MicrosoftMangleContextImpl::mangleArm64ECFnDef(GlobalDecl GD,
+                                                    raw_ostream &Out) {
+  const FunctionDecl *D = cast<FunctionDecl>(GD.getDecl());
+  PrettyStackTraceDecl CrashInfo(D, SourceLocation(),
+                                 getASTContext().getSourceManager(),
+                                 "Mangling Arm64EC function def");
+
+  if (!shouldMangleCXXName(D)) {
+    Out << '#' << D->getName();
+    return;
+  }
+
+  msvc_hashing_ostream MHO(Out);
+  MicrosoftCXXNameMangler Mangler(*this, MHO);
+  return Mangler.mangleArm64ECFnDef(GD);
+}
+
+void MicrosoftCXXNameMangler::mangleArm64ECFnDef(GlobalDecl GD) {
+  Out << '?';
+  mangleName(GD);
+  mangleFunctionEncoding(GD, /*ShouldMangle*/true, /*Arm64ECDef*/true);
 }
 
 MicrosoftMangleContext *MicrosoftMangleContext::create(ASTContext &Context,

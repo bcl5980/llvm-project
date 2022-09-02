@@ -128,6 +128,10 @@ public:
 
   // FIXME: consider replacing raw_ostream & with something like SmallString &.
   void mangleName(GlobalDecl GD, raw_ostream &);
+  // Mangling for function definitions in Arm64EC ABI.
+  virtual void mangleArm64ECFnDef(GlobalDecl GD, raw_ostream &) {
+    llvm_unreachable("Unexpected ABI");
+  }
   virtual void mangleCXXName(GlobalDecl GD, raw_ostream &) = 0;
   virtual void mangleThunk(const CXXMethodDecl *MD,
                           const ThunkInfo &Thunk,
