@@ -86,6 +86,7 @@ add_llvm_target(AArch64CodeGen
   SMEABIPass.cpp
   SVEIntrinsicOpts.cpp
   AArch64SIMDInstrOpt.cpp
+  AArch64Arm64ECCallLowering.cpp
 
   DEPENDS
   intrinsics_gen

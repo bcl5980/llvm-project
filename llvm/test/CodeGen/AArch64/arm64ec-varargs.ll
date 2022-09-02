@@ -2,7 +2,7 @@
 ; RUN: llc -mtriple=arm64ec-pc-windows-msvc < %s | FileCheck %s
 ; RUN: llc -mtriple=arm64ec-pc-windows-msvc < %s -global-isel=1 -global-isel-abort=0 | FileCheck %s
 
-define void @varargs_callee(double %x, ...) nounwind {
+define dso_local void @varargs_callee(double %x, ...) nounwind {
 ; CHECK-LABEL: varargs_callee:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    sub sp, sp, #48
@@ -17,7 +17,7 @@ define void @varargs_callee(double %x, ...) nounwind {
   ret void
 }
 
-define void @varargs_callee_manyargs(i64, i64, i64, i64, i64, ...) nounwind {
+define dso_local void @varargs_callee_manyargs(i64, i64, i64, i64, i64, ...) nounwind {
 ; CHECK-LABEL: varargs_callee_manyargs:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    sub sp, sp, #16
@@ -31,7 +31,7 @@ define void @varargs_callee_manyargs(i64, i64, i64, i64, i64, ...) nounwind {
   ret void
 }
 
-define void @varargs_caller() nounwind {
+define dso_local void @varargs_caller() nounwind {
 ; CHECK-LABEL: varargs_caller:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    sub sp, sp, #48
@@ -54,7 +54,7 @@ define void @varargs_caller() nounwind {
   ret void
 }
 
-define <2 x double> @varargs_many_argscallee(double %a, double %b, double %c,
+define dso_local <2 x double> @varargs_many_argscallee(double %a, double %b, double %c,
 ; CHECK-LABEL: varargs_many_argscallee:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    ldr x8, [x4]
@@ -67,7 +67,7 @@ define <2 x double> @varargs_many_argscallee(double %a, double %b, double %c,
   ret <2 x double> %rval
 }
 
-define void @varargs_many_argscalleer() nounwind {
+define dso_local void @varargs_many_argscalleer() nounwind {
 ; CHECK-LABEL: varargs_many_argscalleer:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    sub sp, sp, #64

@@ -13,7 +13,7 @@ entry:
   ret void
 }
 
-declare void @_Z7CapturePi(i32*)
+declare dso_local void @_Z7CapturePi(i32*)
 
 ; ANDROID-AARCH64: mrs [[A:.*]], TPIDR_EL0
 ; ANDROID-AARCH64: ldr [[B:.*]], [[[A]], #40]
