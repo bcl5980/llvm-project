@@ -19,6 +19,30 @@ entry:
   ret void
 }
 
+define [2 x i64] @f4(ptr %g) {
+entry:
+  %r = call [2 x i64] %g([4 x float] zeroinitializer)
+  ret [2 x i64] %r
+}
+
+define void @fvar(ptr %g) {
+entry:
+  call void (i32, ...) %g(i32 4, i32 5, i32 6, i32 8)
+  ret void
+}
+
+define i32 @fvar2(ptr %g) {
+entry:
+  %r = call i32 (i32, ...) %g(i32 4, i32 5, i32 6, i32 8, i32 7, i32 9)
+  ret i32 %r
+}
+
+define [2 x i64] @fvar3(ptr %g) {
+entry:
+  %r = call [2 x i64] (i32, ...) %g(i32 4, i32 5, i32 6, i32 8, i32 7, i32 9)
+  ret [2 x i64] %r
+}
+
 ; CHECK-LABEL: f:
 ; CHECK:       .seh_proc f
 ; CHECK-NEXT:  // %bb.0: // %entry
@@ -86,6 +110,128 @@ entry:
 ; CHECK-NEXT:    .seh_startepilogue
 ; CHECK-NEXT:    ldr x30, [sp], #16 // 8-byte Folded Reload
 ; CHECK-NEXT:    .seh_save_reg_x x30, 16
+; CHECK-NEXT:    .seh_endepilogue
+; CHECK-NEXT:    ret
+; CHECK-NEXT:    .seh_endfunclet
+; CHECK-NEXT:    .seh_endproc
+;
+; CHECK-LABEL: f4:
+; CHECK:       .seh_proc f4
+; CHECK-NEXT:  // %bb.0: // %entry
+; CHECK-NEXT:    str x30, [sp, #-16]! // 8-byte Folded Spill
+; CHECK-NEXT:    .seh_save_reg_x x30, 16
+; CHECK-NEXT:    .seh_endprologue
+; CHECK-NEXT:    adrp x8, __os_arm64x_check_icall
+; CHECK-NEXT:    adrp x10, thunk.3
+; CHECK-NEXT:    add x10, x10, :lo12:thunk.3
+; CHECK-NEXT:    mov x11, x0
+; CHECK-NEXT:    ldr x8, [x8, :lo12:__os_arm64x_check_icall]
+; CHECK-NEXT:    blr x8
+; CHECK-NEXT:    movi d0, #0000000000000000
+; CHECK-NEXT:    movi d1, #0000000000000000
+; CHECK-NEXT:    movi d2, #0000000000000000
+; CHECK-NEXT:    movi d3, #0000000000000000
+; CHECK-NEXT:    blr x11
+; CHECK-NEXT:    .seh_startepilogue
+; CHECK-NEXT:    ldr x30, [sp], #16 // 8-byte Folded Reload
+; CHECK-NEXT:    .seh_save_reg_x x30, 16
+; CHECK-NEXT:    .seh_endepilogue
+; CHECK-NEXT:    ret
+; CHECK-NEXT:    .seh_endfunclet
+; CHECK-NEXT:    .seh_endproc
+;
+; CHECK-LABEL: fvar:
+; CHECK:       .seh_proc fvar
+; CHECK-NEXT:  // %bb.0: // %entry
+; CHECK-NEXT:    str x30, [sp, #-16]! // 8-byte Folded Spill
+; CHECK-NEXT:    .seh_save_reg_x x30, 16
+; CHECK-NEXT:    .seh_endprologue
+; CHECK-NEXT:    adrp x8, __os_arm64x_check_icall
+; CHECK-NEXT:    adrp x10, thunk.4
+; CHECK-NEXT:    add x10, x10, :lo12:thunk.4
+; CHECK-NEXT:    mov x11, x0
+; CHECK-NEXT:    ldr x8, [x8, :lo12:__os_arm64x_check_icall]
+; CHECK-NEXT:    blr x8
+; CHECK-NEXT:    mov w0, #4
+; CHECK-NEXT:    mov w1, #5
+; CHECK-NEXT:    mov w2, #6
+; CHECK-NEXT:    mov w3, #8
+; CHECK-NEXT:    mov x4, sp
+; CHECK-NEXT:    mov x5, xzr
+; CHECK-NEXT:    blr x11
+; CHECK-NEXT:    .seh_startepilogue
+; CHECK-NEXT:    ldr x30, [sp], #16 // 8-byte Folded Reload
+; CHECK-NEXT:    .seh_save_reg_x x30, 16
+; CHECK-NEXT:    .seh_endepilogue
+; CHECK-NEXT:    ret
+; CHECK-NEXT:    .seh_endfunclet
+; CHECK-NEXT:    .seh_endproc
+;
+; CHECK-LABEL: fvar2:
+; CHECK:       .seh_proc fvar2
+; CHECK-NEXT:  // %bb.0: // %entry
+; CHECK-NEXT:    sub sp, sp, #32
+; CHECK-NEXT:    .seh_stackalloc 32
+; CHECK-NEXT:    str x30, [sp, #16] // 8-byte Folded Spill
+; CHECK-NEXT:    .seh_save_reg x30, 16
+; CHECK-NEXT:    .seh_endprologue
+; CHECK-NEXT:    adrp x8, __os_arm64x_check_icall
+; CHECK-NEXT:    adrp x10, thunk.5
+; CHECK-NEXT:    add x10, x10, :lo12:thunk.5
+; CHECK-NEXT:    mov x11, x0
+; CHECK-NEXT:    ldr x8, [x8, :lo12:__os_arm64x_check_icall]
+; CHECK-NEXT:    blr x8
+; CHECK-NEXT:    mov x4, sp
+; CHECK-NEXT:    mov w8, #9
+; CHECK-NEXT:    mov w9, #7
+; CHECK-NEXT:    mov w0, #4
+; CHECK-NEXT:    mov w1, #5
+; CHECK-NEXT:    mov w2, #6
+; CHECK-NEXT:    mov w3, #8
+; CHECK-NEXT:    mov w5, #16
+; CHECK-NEXT:    str w8, [sp, #8]
+; CHECK-NEXT:    str w9, [sp]
+; CHECK-NEXT:    blr x11
+; CHECK-NEXT:    .seh_startepilogue
+; CHECK-NEXT:    ldr x30, [sp, #16] // 8-byte Folded Reload
+; CHECK-NEXT:    .seh_save_reg x30, 16
+; CHECK-NEXT:    add sp, sp, #32
+; CHECK-NEXT:    .seh_stackalloc 32
+; CHECK-NEXT:    .seh_endepilogue
+; CHECK-NEXT:    ret
+; CHECK-NEXT:    .seh_endfunclet
+; CHECK-NEXT:    .seh_endproc
+;
+; CHECK-LABEL: fvar3:
+; CHECK:       .seh_proc fvar3
+; CHECK-NEXT:  // %bb.0: // %entry
+; CHECK-NEXT:    sub sp, sp, #32
+; CHECK-NEXT:    .seh_stackalloc 32
+; CHECK-NEXT:    str x30, [sp, #16] // 8-byte Folded Spill
+; CHECK-NEXT:    .seh_save_reg x30, 16
+; CHECK-NEXT:    .seh_endprologue
+; CHECK-NEXT:    adrp x8, __os_arm64x_check_icall
+; CHECK-NEXT:    adrp x10, thunk.6
+; CHECK-NEXT:    add x10, x10, :lo12:thunk.6
+; CHECK-NEXT:    mov x11, x0
+; CHECK-NEXT:    ldr x8, [x8, :lo12:__os_arm64x_check_icall]
+; CHECK-NEXT:    blr x8
+; CHECK-NEXT:    mov x4, sp
+; CHECK-NEXT:    mov w8, #9
+; CHECK-NEXT:    mov w9, #7
+; CHECK-NEXT:    mov w0, #4
+; CHECK-NEXT:    mov w1, #5
+; CHECK-NEXT:    mov w2, #6
+; CHECK-NEXT:    mov w3, #8
+; CHECK-NEXT:    mov w5, #16
+; CHECK-NEXT:    str w8, [sp, #8]
+; CHECK-NEXT:    str w9, [sp]
+; CHECK-NEXT:    blr x11
+; CHECK-NEXT:    .seh_startepilogue
+; CHECK-NEXT:    ldr x30, [sp, #16] // 8-byte Folded Reload
+; CHECK-NEXT:    .seh_save_reg x30, 16
+; CHECK-NEXT:    add sp, sp, #32
+; CHECK-NEXT:    .seh_stackalloc 32
 ; CHECK-NEXT:    .seh_endepilogue
 ; CHECK-NEXT:    ret
 ; CHECK-NEXT:    .seh_endfunclet
@@ -160,6 +306,207 @@ entry:
 ; CHECK-NEXT:    .seh_save_fplr 48
 ; CHECK-NEXT:    add sp, sp, #64
 ; CHECK-NEXT:    .seh_stackalloc 64
+; CHECK-NEXT:    .seh_endepilogue
+; CHECK-NEXT:    ret
+; CHECK-NEXT:    .seh_endfunclet
+; CHECK-NEXT:    .seh_endproc
+;
+; CHECK-LABEL: thunk.3:
+; CHECK:       .seh_proc thunk.3
+; CHECK-NEXT:  // %bb.0:
+; CHECK-NEXT:    sub sp, sp, #80
+; CHECK-NEXT:    .seh_stackalloc 80
+; CHECK-NEXT:    stp x29, x30, [sp, #64] // 16-byte Folded Spill
+; CHECK-NEXT:    .seh_save_fplr 64
+; CHECK-NEXT:    add x29, sp, #64
+; CHECK-NEXT:    .seh_add_fp 64
+; CHECK-NEXT:    .seh_endprologue
+; CHECK-NEXT:    adrp x8, __os_arm64x_dispatch_call_no_redirect
+; CHECK-NEXT:    sub x0, x29, #16
+; CHECK-NEXT:    add x1, sp, #32
+; CHECK-NEXT:    stp s1, s2, [sp, #36]
+; CHECK-NEXT:    str s0, [sp, #32]
+; CHECK-NEXT:    ldr x8, [x8, :lo12:__os_arm64x_dispatch_call_no_redirect]
+; CHECK-NEXT:    str s3, [sp, #44]
+; CHECK-NEXT:    blr x8
+; CHECK-NEXT:    ldp x0, x1, [x29, #-16]
+; CHECK-NEXT:    .seh_startepilogue
+; CHECK-NEXT:    ldp x29, x30, [sp, #64] // 16-byte Folded Reload
+; CHECK-NEXT:    .seh_save_fplr 64
+; CHECK-NEXT:    add sp, sp, #80
+; CHECK-NEXT:    .seh_stackalloc 80
+; CHECK-NEXT:    .seh_endepilogue
+; CHECK-NEXT:    ret
+; CHECK-NEXT:    .seh_endfunclet
+; CHECK-NEXT:    .seh_endproc
+;
+; CHECK-LABEL: thunk.4:
+; CHECK:       .seh_proc thunk.4
+; CHECK-NEXT:  // %bb.0:
+; CHECK-NEXT:    stp x19, x20, [sp, #-64]! // 16-byte Folded Spill
+; CHECK-NEXT:    .seh_save_regp_x x19, 64
+; CHECK-NEXT:    stp x21, x22, [sp, #16] // 16-byte Folded Spill
+; CHECK-NEXT:    .seh_save_regp x21, 16
+; CHECK-NEXT:    stp x25, x26, [sp, #32] // 16-byte Folded Spill
+; CHECK-NEXT:    .seh_save_regp x25, 32
+; CHECK-NEXT:    stp x29, x30, [sp, #48] // 16-byte Folded Spill
+; CHECK-NEXT:    .seh_save_fplr 48
+; CHECK-NEXT:    add x29, sp, #48
+; CHECK-NEXT:    .seh_add_fp 48
+; CHECK-NEXT:    .seh_endprologue
+; CHECK-NEXT:    adrp x8, __os_arm64x_dispatch_call_no_redirect
+; CHECK-NEXT:    mov x19, x3
+; CHECK-NEXT:    mov x20, x2
+; CHECK-NEXT:    mov x21, x1
+; CHECK-NEXT:    mov x22, x0
+; CHECK-NEXT:    mov x25, x9
+; CHECK-NEXT:    ldr x26, [x8, :lo12:__os_arm64x_dispatch_call_no_redirect]
+; CHECK-NEXT:    add x8, x5, #47
+; CHECK-NEXT:    lsr x15, x8, #4
+; CHECK-NEXT:    bl __chkstk_arm64ec
+; CHECK-NEXT:    sub x8, sp, x15, lsl #4
+; CHECK-NEXT:    add x0, x8, #32
+; CHECK-NEXT:    mov sp, x8
+; CHECK-NEXT:    mov x1, x4
+; CHECK-NEXT:    mov x2, x5
+; CHECK-NEXT:    bl "#memcpy"
+; CHECK-NEXT:    mov x0, x22
+; CHECK-NEXT:    mov x1, x21
+; CHECK-NEXT:    mov x2, x20
+; CHECK-NEXT:    mov x3, x19
+; CHECK-NEXT:    mov x9, x25
+; CHECK-NEXT:    fmov d0, x0
+; CHECK-NEXT:    fmov d1, x1
+; CHECK-NEXT:    fmov d2, x2
+; CHECK-NEXT:    fmov d3, x3
+; CHECK-NEXT:    blr x26
+; CHECK-NEXT:    .seh_startepilogue
+; CHECK-NEXT:    sub sp, x29, #48
+; CHECK-NEXT:    .seh_add_fp 48
+; CHECK-NEXT:    ldp x29, x30, [sp, #48] // 16-byte Folded Reload
+; CHECK-NEXT:    .seh_save_fplr 48
+; CHECK-NEXT:    ldp x25, x26, [sp, #32] // 16-byte Folded Reload
+; CHECK-NEXT:    .seh_save_regp x25, 32
+; CHECK-NEXT:    ldp x21, x22, [sp, #16] // 16-byte Folded Reload
+; CHECK-NEXT:    .seh_save_regp x21, 16
+; CHECK-NEXT:    ldp x19, x20, [sp], #64 // 16-byte Folded Reload
+; CHECK-NEXT:    .seh_save_regp_x x19, 64
+; CHECK-NEXT:    .seh_endepilogue
+; CHECK-NEXT:    ret
+; CHECK-NEXT:    .seh_endfunclet
+; CHECK-NEXT:    .seh_endproc
+;
+; CHECK-LABEL: thunk.5:
+; CHECK:       .seh_proc thunk.5
+; CHECK-NEXT:  // %bb.0:
+; CHECK-NEXT:    stp x19, x20, [sp, #-64]! // 16-byte Folded Spill
+; CHECK-NEXT:    .seh_save_regp_x x19, 64
+; CHECK-NEXT:    stp x21, x22, [sp, #16] // 16-byte Folded Spill
+; CHECK-NEXT:    .seh_save_regp x21, 16
+; CHECK-NEXT:    stp x25, x26, [sp, #32] // 16-byte Folded Spill
+; CHECK-NEXT:    .seh_save_regp x25, 32
+; CHECK-NEXT:    stp x29, x30, [sp, #48] // 16-byte Folded Spill
+; CHECK-NEXT:    .seh_save_fplr 48
+; CHECK-NEXT:    add x29, sp, #48
+; CHECK-NEXT:    .seh_add_fp 48
+; CHECK-NEXT:    .seh_endprologue
+; CHECK-NEXT:    adrp x8, __os_arm64x_dispatch_call_no_redirect
+; CHECK-NEXT:    mov x19, x3
+; CHECK-NEXT:    mov x20, x2
+; CHECK-NEXT:    mov x21, x1
+; CHECK-NEXT:    mov x22, x0
+; CHECK-NEXT:    mov x25, x9
+; CHECK-NEXT:    ldr x26, [x8, :lo12:__os_arm64x_dispatch_call_no_redirect]
+; CHECK-NEXT:    add x8, x5, #47
+; CHECK-NEXT:    lsr x15, x8, #4
+; CHECK-NEXT:    bl __chkstk_arm64ec
+; CHECK-NEXT:    sub x8, sp, x15, lsl #4
+; CHECK-NEXT:    add x0, x8, #32
+; CHECK-NEXT:    mov sp, x8
+; CHECK-NEXT:    mov x1, x4
+; CHECK-NEXT:    mov x2, x5
+; CHECK-NEXT:    bl "#memcpy"
+; CHECK-NEXT:    mov x0, x22
+; CHECK-NEXT:    mov x1, x21
+; CHECK-NEXT:    mov x2, x20
+; CHECK-NEXT:    mov x3, x19
+; CHECK-NEXT:    mov x9, x25
+; CHECK-NEXT:    fmov d0, x0
+; CHECK-NEXT:    fmov d1, x1
+; CHECK-NEXT:    fmov d2, x2
+; CHECK-NEXT:    fmov d3, x3
+; CHECK-NEXT:    blr x26
+; CHECK-NEXT:    mov w0, w8
+; CHECK-NEXT:    .seh_startepilogue
+; CHECK-NEXT:    sub sp, x29, #48
+; CHECK-NEXT:    .seh_add_fp 48
+; CHECK-NEXT:    ldp x29, x30, [sp, #48] // 16-byte Folded Reload
+; CHECK-NEXT:    .seh_save_fplr 48
+; CHECK-NEXT:    ldp x25, x26, [sp, #32] // 16-byte Folded Reload
+; CHECK-NEXT:    .seh_save_regp x25, 32
+; CHECK-NEXT:    ldp x21, x22, [sp, #16] // 16-byte Folded Reload
+; CHECK-NEXT:    .seh_save_regp x21, 16
+; CHECK-NEXT:    ldp x19, x20, [sp], #64 // 16-byte Folded Reload
+; CHECK-NEXT:    .seh_save_regp_x x19, 64
+; CHECK-NEXT:    .seh_endepilogue
+; CHECK-NEXT:    ret
+; CHECK-NEXT:    .seh_endfunclet
+; CHECK-NEXT:    .seh_endproc
+;
+; CHECK-LABEL: thunk.6:
+; CHECK:       .seh_proc thunk.6
+; CHECK-NEXT:  // %bb.0:
+; CHECK-NEXT:    stp x19, x20, [sp, #-64]! // 16-byte Folded Spill
+; CHECK-NEXT:    .seh_save_regp_x x19, 64
+; CHECK-NEXT:    stp x21, x22, [sp, #16] // 16-byte Folded Spill
+; CHECK-NEXT:    .seh_save_regp x21, 16
+; CHECK-NEXT:    str x25, [sp, #32] // 8-byte Folded Spill
+; CHECK-NEXT:    .seh_save_reg x25, 32
+; CHECK-NEXT:    stp x29, x30, [sp, #40] // 16-byte Folded Spill
+; CHECK-NEXT:    .seh_save_fplr 40
+; CHECK-NEXT:    add x29, sp, #40
+; CHECK-NEXT:    .seh_add_fp 40
+; CHECK-NEXT:    sub sp, sp, #16
+; CHECK-NEXT:    .seh_stackalloc 16
+; CHECK-NEXT:    .seh_endprologue
+; CHECK-NEXT:    adrp x8, __os_arm64x_dispatch_call_no_redirect
+; CHECK-NEXT:    mov x19, x2
+; CHECK-NEXT:    mov x20, x1
+; CHECK-NEXT:    mov x21, x0
+; CHECK-NEXT:    mov x22, x9
+; CHECK-NEXT:    ldr x25, [x8, :lo12:__os_arm64x_dispatch_call_no_redirect]
+; CHECK-NEXT:    add x8, x5, #55
+; CHECK-NEXT:    lsr x15, x8, #4
+; CHECK-NEXT:    bl __chkstk_arm64ec
+; CHECK-NEXT:    sub x8, sp, x15, lsl #4
+; CHECK-NEXT:    mov sp, x8
+; CHECK-NEXT:    add x0, x8, #40
+; CHECK-NEXT:    mov x1, x4
+; CHECK-NEXT:    mov x2, x5
+; CHECK-NEXT:    str x3, [x8, #32]
+; CHECK-NEXT:    bl "#memcpy"
+; CHECK-NEXT:    sub x0, x29, #56
+; CHECK-NEXT:    mov x1, x21
+; CHECK-NEXT:    mov x2, x20
+; CHECK-NEXT:    mov x3, x19
+; CHECK-NEXT:    mov x9, x22
+; CHECK-NEXT:    fmov d0, x0
+; CHECK-NEXT:    fmov d1, x1
+; CHECK-NEXT:    fmov d2, x2
+; CHECK-NEXT:    fmov d3, x3
+; CHECK-NEXT:    blr x25
+; CHECK-NEXT:    ldp x0, x1, [x29, #-56]
+; CHECK-NEXT:    .seh_startepilogue
+; CHECK-NEXT:    sub sp, x29, #40
+; CHECK-NEXT:    .seh_add_fp 40
+; CHECK-NEXT:    ldp x29, x30, [sp, #40] // 16-byte Folded Reload
+; CHECK-NEXT:    .seh_save_fplr 40
+; CHECK-NEXT:    ldr x25, [sp, #32] // 8-byte Folded Reload
+; CHECK-NEXT:    .seh_save_reg x25, 32
+; CHECK-NEXT:    ldp x21, x22, [sp, #16] // 16-byte Folded Reload
+; CHECK-NEXT:    .seh_save_regp x21, 16
+; CHECK-NEXT:    ldp x19, x20, [sp], #64 // 16-byte Folded Reload
+; CHECK-NEXT:    .seh_save_regp_x x19, 64
 ; CHECK-NEXT:    .seh_endepilogue
 ; CHECK-NEXT:    ret
 ; CHECK-NEXT:    .seh_endfunclet

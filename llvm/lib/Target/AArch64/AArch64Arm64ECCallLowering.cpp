@@ -59,14 +59,38 @@ private:
 } // end anonymous namespace
 
 Function *AArch64Arm64ECCallLowering::buildExitThunk(CallBase *CB) {
-  Type *RetTy = CB->getFunctionType()->getReturnType();
+  FunctionType *FT = CB->getFunctionType();
+  Type *RetTy = FT->getReturnType();
+  bool IsVarArg = FT->isVarArg();
+  Type *PtrTy = Type::getInt8PtrTy(M->getContext());
+  Type *I64Ty = Type::getInt64Ty(M->getContext());
+
   SmallVector<Type *> DefArgTypes;
   // The first argument to a thunk is the called function, stored in x9.
   // (Normally, we won't explicitly refer to this in the assembly; it just
   // gets passed on by the call.)
-  DefArgTypes.push_back(Type::getInt8PtrTy(M->getContext()));
-  for (unsigned i = 0; i < CB->arg_size(); ++i) {
-    DefArgTypes.push_back(CB->getArgOperand(i)->getType());
+  DefArgTypes.push_back(PtrTy);
+
+  if (IsVarArg) {
+    // We treat the variadic function's exit thunk as a normal function
+    // with type:
+    //   rettype exitthunk(
+    //     ptr x9, ptr x0, i64 x1, i64 x2, i64 x3, ptr x4, i64 x5)
+    // that can coverage all types of variadic function.
+    // x9 is similar to normal exit thunk, store the called function.
+    // x0-x3 is the arguments be stored in registers.
+    // x4 is the address of the arguments on the stack.
+    // x5 is the size of the arguments on the stack.
+    DefArgTypes.push_back(PtrTy);
+    for (int i = 0; i < 3; i++)
+      DefArgTypes.push_back(I64Ty);
+
+    DefArgTypes.push_back(PtrTy);
+    DefArgTypes.push_back(I64Ty);
+  } else {
+    for (unsigned i = 0; i < CB->arg_size(); ++i) {
+      DefArgTypes.push_back(CB->getArgOperand(i)->getType());
+    }
   }
   FunctionType *Ty = FunctionType::get(RetTy, DefArgTypes, false);
   Function *F =
@@ -139,12 +163,13 @@ Function *AArch64Arm64ECCallLowering::buildExitThunk(CallBase *CB) {
     } else {
       Args.push_back(&Arg);
     }
-    ArgTypes.push_back(Args.back()->getType());
+    if (!IsVarArg)
+      ArgTypes.push_back(Args.back()->getType());
   }
   // FIXME: Transfer necessary attributes? sret? anything else?
   // FIXME: Try to share thunks.  This probably involves simplifying the
   // argument types (translating all integers/pointers to i64, etc.)
-  auto *CallTy = FunctionType::get(X64RetType, ArgTypes, false);
+  auto *CallTy = FunctionType::get(X64RetType, ArgTypes, IsVarArg);
 
   Callee = IRB.CreateBitCast(Callee, CallTy->getPointerTo(0));
   CallInst *Call = IRB.CreateCall(CallTy, Callee, Args);

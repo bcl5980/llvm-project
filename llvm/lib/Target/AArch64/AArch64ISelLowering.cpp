@@ -1476,6 +1476,13 @@ AArch64TargetLowering::AArch64TargetLowering(const TargetMachine &TM,
   PredictableSelectIsExpensive = Subtarget->predictableSelectIsExpensive();
 
   IsStrictFPEnabled = true;
+
+  if (Subtarget->isWindowsArm64EC()) {
+    // FIXME: are there other intrinsics we need to add here?
+    setLibcallName(RTLIB::MEMCPY, "#memcpy");
+    setLibcallName(RTLIB::MEMSET, "#memset");
+    setLibcallName(RTLIB::MEMMOVE, "#memmove");
+  }
 }
 
 void AArch64TargetLowering::addTypeForNEON(MVT VT) {
@@ -6633,7 +6640,8 @@ static void analyzeCallOperands(const AArch64TargetLowering &TLI,
 
   // For Arm64EC thunks, allocate 32 extra bytes at the bottom of the stack
   // for the shadow store.
-  if (CalleeCC == CallingConv::ARM64EC_Thunk_X64)
+  // Variadic function allocate 32 extra bytes in the dynamic allocation
+  if (CalleeCC == CallingConv::ARM64EC_Thunk_X64 && !IsVarArg)
     CCInfo.AllocateStack(32, Align(16));
 
   unsigned NumArgs = Outs.size();
@@ -6893,6 +6901,59 @@ SDValue AArch64TargetLowering::changeStreamingMode(
   return DAG.getNode(Opcode, DL, DAG.getVTList(MVT::Other, MVT::Glue), Ops);
 }
 
+// Variadic function's exit thunk need to allocate an allocation on
+// the bottom of current stack as callee's real arguments on the stack,
+// then copy caller's arguments on the stack to the allocation .
+SDValue AArch64TargetLowering::varArgCopyForExitThunk(
+    SelectionDAG &DAG, SDLoc &DL, SDValue Chain,
+    SmallVector<SDValue, 32> &OutVals, bool RetStack) const {
+  MachineFunction &MF = DAG.getMachineFunction();
+  MachineFrameInfo &MFI = MF.getFrameInfo();
+
+  // Memory addresss of the arguments on the stack.
+  SDValue X4Stack = OutVals[OutVals.size() - 2];
+  // Size of the arguments on the stack.
+  SDValue X5Length = OutVals[OutVals.size() - 1];
+
+  // 32 extra bytes shadow register
+  // 8 extra bytes to store x3
+  int64_t ExtraAlloc = 32 + (RetStack ? 8 : 0);
+  SDValue AlignC = DAG.getConstant(0, DL, MVT::i64);
+  SDValue AddC = DAG.getConstant(15 + ExtraAlloc, DL, MVT::i64);
+  SDValue Add = DAG.getNode(ISD::ADD, DL, MVT::i64, X5Length, AddC);
+
+  // Dynamic stack wiil align the size to 16btyes.
+  // It looks Microsoft not only align the size to 16bytes,
+  // but also align (-1,-15) to -16. We don't know why so for
+  // now we don't add this part.
+  SDValue Ops[] = {Chain, Add, AlignC};
+  SDVTList VTs = DAG.getVTList(MVT::i64, MVT::Other);
+  SDValue Buffer = DAG.getNode(ISD::DYNAMIC_STACKALLOC, DL, VTs, Ops);
+  unsigned FI = MFI.CreateVariableSizedObject(Align(16), nullptr);
+  Register Reg =
+      MF.getRegInfo().createVirtualRegister(getRegClassFor(MVT::i64));
+  Chain = DAG.getCopyToReg(Buffer.getValue(1), DL, Reg, Buffer.getValue(0));
+  MachinePointerInfo PtrInfo = MachinePointerInfo::getStack(MF, FI);
+  SDValue Ptr = DAG.getObjectPtrOffset(DL, Buffer, TypeSize::Fixed(32));
+
+  // When varargs function returns the value in a register on AArch64,
+  // but requires an “sret” return on x64, we need to shuffle around
+  // the argument registers, and store x3 to the stack.
+  if (RetStack) {
+    Chain = DAG.getStore(Chain, DL, OutVals[5], Ptr, PtrInfo.getWithOffset(32));
+    Ptr = DAG.getObjectPtrOffset(DL, Buffer, TypeSize::Fixed(ExtraAlloc));
+  }
+
+  SDValue Cpy =
+      DAG.getMemcpy(Chain, DL, Ptr, X4Stack, X5Length, Align(8),
+                    /*isVol = */ false, /*AlwaysInline = */ false,
+                    /*isTailCall = */ false, PtrInfo.getWithOffset(ExtraAlloc),
+                    MachinePointerInfo());
+  Chain = Cpy.getValue(1);
+
+  return Chain;
+}
+
 /// LowerCall - Lower a call to a callseq_start + CALL + callseq_end chain,
 /// and add input and output parameter nodes.
 SDValue
@@ -6908,6 +6969,7 @@ AArch64TargetLowering::LowerCall(CallLoweringInfo &CLI,
   bool &IsTailCall = CLI.IsTailCall;
   CallingConv::ID &CallConv = CLI.CallConv;
   bool IsVarArg = CLI.IsVarArg;
+  bool IsArm64EcThunk = CallConv == CallingConv::ARM64EC_Thunk_X64;
 
   MachineFunction &MF = DAG.getMachineFunction();
   MachineFunction::CallSiteInfo CSInfo;
@@ -6936,6 +6998,11 @@ AArch64TargetLowering::LowerCall(CallLoweringInfo &CLI,
         report_fatal_error("Passing SVE types to variadic functions is "
                            "currently not supported");
     }
+
+    // Variadic exit thunk only need first 5 parameters to lower call itself.
+    // Last 2 arguments are the stack address and size.
+    if (IsArm64EcThunk)
+      Outs.resize(5);
   }
 
   analyzeCallOperands(*this, Subtarget, CLI, CCInfo);
@@ -7073,6 +7140,9 @@ AArch64TargetLowering::LowerCall(CallLoweringInfo &CLI,
   SmallSet<unsigned, 8> RegsUsed;
   SmallVector<SDValue, 8> MemOpChains;
   auto PtrVT = getPointerTy(DAG.getDataLayout());
+
+  if (IsVarArg && IsArm64EcThunk)
+    Chain = varArgCopyForExitThunk(DAG, DL, Chain, OutVals, Outs[1].IsFixed);
 
   if (IsVarArg && CLI.CB && CLI.CB->isMustTailCall()) {
     const auto &Forwards = FuncInfo->getForwardedMustTailRegParms();
@@ -7234,6 +7304,28 @@ AArch64TargetLowering::LowerCall(CallLoweringInfo &CLI,
         if (Options.EmitCallSiteInfo)
           CSInfo.emplace_back(VA.getLocReg(), i);
       }
+
+      if (IsVarArg && IsArm64EcThunk) {
+        // Float parameters are passed in both int and float register
+        Register ShadowReg;
+        switch (VA.getLocReg()) {
+        case AArch64::X0:
+          ShadowReg = AArch64::D0;
+          break;
+        case AArch64::X1:
+          ShadowReg = AArch64::D1;
+          break;
+        case AArch64::X2:
+          ShadowReg = AArch64::D2;
+          break;
+        case AArch64::X3:
+          ShadowReg = AArch64::D3;
+          break;
+        }
+        if (ShadowReg)
+          RegsToPass.push_back(std::make_pair(
+              ShadowReg, DAG.getRegister(VA.getLocReg(), MVT::i64)));
+      }
     } else {
       assert(VA.isMemLoc());
 
@@ -7303,7 +7395,7 @@ AArch64TargetLowering::LowerCall(CallLoweringInfo &CLI,
     }
   }
 
-  if (IsVarArg && Subtarget->isWindowsArm64EC()) {
+  if (IsVarArg && Subtarget->isWindowsArm64EC() && !IsArm64EcThunk) {
     // For vararg calls, the Arm64EC ABI requires values in x4 and x5
     // describing the argument list.  x4 contains the address of the
     // first stack parameter. x5 contains the size in bytes of all parameters

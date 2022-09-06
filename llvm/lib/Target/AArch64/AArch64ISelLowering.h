@@ -907,6 +907,10 @@ private:
   unsigned allocateLazySaveBuffer(SDValue &Chain, const SDLoc &DL,
                                   SelectionDAG &DAG, Register &Reg) const;
 
+  SDValue varArgCopyForExitThunk(SelectionDAG &DAG, SDLoc &DL, SDValue Chain,
+                                 SmallVector<SDValue, 32> &OutVals,
+                                 bool RetStack) const;
+
   SDValue LowerFormalArguments(SDValue Chain, CallingConv::ID CallConv,
                                bool isVarArg,
                                const SmallVectorImpl<ISD::InputArg> &Ins,
