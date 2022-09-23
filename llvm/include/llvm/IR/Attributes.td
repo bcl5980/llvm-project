@@ -317,6 +317,9 @@ def MustProgress : EnumAttr<"mustprogress", [FnAttr]>;
 /// Function is a presplit coroutine.
 def PresplitCoroutine : EnumAttr<"presplitcoroutine", [FnAttr]>;
 
+/// Struct Arg size for x86 signature to generate correct thunk
+def Arm64ECArgSize : IntAttr<"arm64ec_argsize", [ParamAttr, RetAttr]>;
+
 /// Target-independent string attributes.
 def LessPreciseFPMAD : StrBoolAttr<"less-precise-fpmad">;
 def NoInfsFPMath : StrBoolAttr<"no-infs-fp-math">;

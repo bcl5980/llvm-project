@@ -1814,6 +1814,18 @@ public:
     return Attrs.getParamDereferenceableOrNullBytes(i);
   }
 
+  /// Extract the number of Arm64ECArgSize bytes for a call or
+  /// parameter.
+  uint64_t getRetArm64ECArgSizeBytes() const {
+    return Attrs.getRetArm64ECArgSizeBytes();
+  }
+
+  /// Extract the number of Arm64ECArgSize bytes for a call or
+  /// parameter.
+  uint64_t getParamArm64ECArgSizeBytes(unsigned i) const {
+    return Attrs.getParamArm64ECArgSizeBytes(i);
+  }
+
   /// Return true if the return value is known to be not null.
   /// This may be because it has the nonnull attribute, or because at least
   /// one byte is dereferenceable and the pointer is in addrspace(0).

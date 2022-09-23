@@ -993,6 +993,7 @@ Function *CodeExtractor::constructFunction(const ValueSet &inputs,
       case Attribute::ZExt:
       case Attribute::ImmArg:
       case Attribute::ByRef:
+      case Attribute::Arm64ECArgSize:
       //  These are not really attributes.
       case Attribute::None:
       case Attribute::EndAttrKinds:

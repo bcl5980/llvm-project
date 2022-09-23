@@ -2339,6 +2339,16 @@ void CodeGenModule::ConstructAttributeList(StringRef Name,
       RetAttrs.addAttribute(llvm::Attribute::NoUndef);
   }
 
+  auto AddArm64ECArgSize = [this](QualType Ty, llvm::AttrBuilder &Attrs) {
+    if (Ty->isRecordType()) {
+      CharUnits SizeInBytes = getContext().getTypeSizeInChars(Ty.getTypePtr());
+      Attrs.addArm64ECArgSizeAttr(SizeInBytes.getQuantity());
+    }
+  };
+
+  if (getTriple().isWindowsArm64EC())
+    AddArm64ECArgSize(RetTy, RetAttrs);
+
   switch (RetAI.getKind()) {
   case ABIArgInfo::Extend:
     if (RetAI.isSignExt())
@@ -2471,6 +2481,9 @@ void CodeGenModule::ConstructAttributeList(StringRef Name,
         DetermineNoUndef(ParamType, getTypes(), DL, AI)) {
       Attrs.addAttribute(llvm::Attribute::NoUndef);
     }
+
+    if (getTriple().isWindowsArm64EC())
+      AddArm64ECArgSize(ParamType, Attrs);
 
     // 'restrict' -> 'noalias' is done in EmitFunctionProlog when we
     // have the corresponding parameter variable.  It doesn't make

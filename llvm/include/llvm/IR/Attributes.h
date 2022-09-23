@@ -147,6 +147,8 @@ public:
   static Attribute getWithInAllocaType(LLVMContext &Context, Type *Ty);
   static Attribute getWithUWTableKind(LLVMContext &Context, UWTableKind Kind);
   static Attribute getWithMemoryEffects(LLVMContext &Context, MemoryEffects ME);
+  static Attribute getWithArm64ECArgSizeBytes(LLVMContext &Context,
+                                              uint64_t Bytes);
 
   /// For a typed attribute, return the equivalent attribute with the type
   /// changed to \p ReplacementTy.
@@ -247,6 +249,9 @@ public:
 
   /// Returns memory effects.
   MemoryEffects getMemoryEffects() const;
+
+  /// Returns arm64ec x86 signature arg size in bytes
+  uint64_t getArm64ECArgSizeBytes() const;
 
   /// The Attribute is converted to a string of equivalent mnemonic. This
   /// is, presumably, for writing out the mnemonics for the assembly writer.
@@ -381,6 +386,7 @@ public:
   UWTableKind getUWTableKind() const;
   AllocFnKind getAllocKind() const;
   MemoryEffects getMemoryEffects() const;
+  uint64_t getArm64ECArgSizeBytes() const;
   std::string getAsString(bool InAttrGrp = false) const;
 
   /// Return true if this attribute set belongs to the LLVMContext.
@@ -883,6 +889,13 @@ public:
   /// Returns memory effects of the function.
   MemoryEffects getMemoryEffects() const;
 
+  /// Get the number of Arm64ECArgSize bytes (or zero if unknown) of the
+  /// return value.
+  uint64_t getRetArm64ECArgSizeBytes() const;
+
+  /// Get the number of Arm64ECArgSize bytes (or zero if unknown) of an arg.
+  uint64_t getParamArm64ECArgSizeBytes(unsigned Index) const;
+
   /// Return the attributes at the index as a string.
   std::string getAsString(unsigned Index, bool InAttrGrp = false) const;
 
@@ -1153,6 +1166,11 @@ public:
   /// Retrieve the allocsize args, or None if the attribute does not exist.
   Optional<std::pair<unsigned, Optional<unsigned>>> getAllocSizeArgs() const;
 
+  /// Retrieve the arm64ec x86 signature size attribute, if it exists.
+  uint64_t getArm64ECArgSizeBytes() const {
+    return getRawIntAttr(Attribute::Arm64ECArgSize).value_or(0);
+  }
+
   /// Add integer attribute with raw value (packed/encoded if necessary).
   AttrBuilder &addRawIntAttr(Attribute::AttrKind Kind, uint64_t Value);
 
@@ -1221,6 +1239,10 @@ public:
   /// Add a vscale_range attribute, using the representation returned by
   /// Attribute.getIntValue().
   AttrBuilder &addVScaleRangeAttrFromRawRepr(uint64_t RawVScaleRangeRepr);
+
+  /// This turns the number of arm64ec args with x86 signature bytes into the
+  /// form used internally in Attribute.
+  AttrBuilder &addArm64ECArgSizeAttr(uint64_t Bytes);
 
   /// This turns the unwind table kind into the form used internally in
   /// Attribute.

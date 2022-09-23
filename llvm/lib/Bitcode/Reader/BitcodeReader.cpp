@@ -2019,6 +2019,8 @@ static Attribute::AttrKind getAttrFromCode(uint64_t Code) {
     return Attribute::Hot;
   case bitc::ATTR_KIND_PRESPLIT_COROUTINE:
     return Attribute::PresplitCoroutine;
+  case bitc::ATTR_KIND_ARM64EC_ARG_SIZE:
+    return Attribute::Arm64ECArgSize;
   }
 }
 

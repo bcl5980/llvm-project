@@ -484,6 +484,12 @@ public:
     return AttributeSets.getParamDereferenceableOrNullBytes(ArgNo);
   }
 
+  /// Extract the number of Arm64ECArgSize bytes for a parameter.
+  /// @param ArgNo Index of an argument, with 0 being the first function arg.
+  uint64_t getParamArm64ECArgSizeBytes(unsigned ArgNo) const {
+    return AttributeSets.getParamArm64ECArgSizeBytes(ArgNo);
+  }
+
   /// Determine if the function is presplit coroutine.
   bool isPresplitCoroutine() const {
     return hasFnAttribute(Attribute::PresplitCoroutine);

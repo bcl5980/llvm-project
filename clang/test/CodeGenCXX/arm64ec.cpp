@@ -2,7 +2,7 @@
 
 // CHECK: @"?g@@YAXUA@@UB@@@Z" = alias void ([2 x float], [4 x float]), void ([2 x float], [4 x float])* @"?g@@$$hYAXUA@@UB@@@Z"
 // CHECK: define dso_local void @"?g@@$$hYAXUA@@UB@@@Z"
-// CHECK: call void (i64, ...) @"?f@@YAXUA@@ZZ"(i64 %{{.*}}, %struct.B* noundef %{{.*}})
+// CHECK: call void (i64, ...) @"?f@@YAXUA@@ZZ"(i64 arm64ec_argsize(8) %{{.*}}, %struct.B* noundef arm64ec_argsize(16) %{{.*}})
 typedef struct { float x[2]; } A;
 typedef struct { float x[4]; } B;
 void f(A a, ...);

@@ -230,6 +230,11 @@ Attribute Attribute::getWithVScaleRangeArgs(LLVMContext &Context,
   return get(Context, VScaleRange, packVScaleRangeArgs(MinValue, MaxValue));
 }
 
+Attribute Attribute::getWithArm64ECArgSizeBytes(LLVMContext &Context,
+                                                uint64_t Bytes) {
+  return get(Context, Arm64ECArgSize, Bytes);
+}
+
 Attribute::AttrKind Attribute::getAttrKindFromName(StringRef AttrName) {
   return StringSwitch<Attribute::AttrKind>(AttrName)
 #define GET_ATTR_NAMES
@@ -375,6 +380,13 @@ Optional<unsigned> Attribute::getVScaleRangeMax() const {
   assert(hasAttribute(Attribute::VScaleRange) &&
          "Trying to get vscale args from non-vscale attribute");
   return unpackVScaleRangeArgs(pImpl->getValueAsInt()).second;
+}
+
+uint64_t Attribute::getArm64ECArgSizeBytes() const {
+  assert(hasAttribute(Attribute::Arm64ECArgSize) &&
+         "Trying to get Arm64ECArgSize bytes from "
+         "non-Arm64ECArgSize attribute!");
+  return pImpl->getValueAsInt();
 }
 
 UWTableKind Attribute::getUWTableKind() const {
@@ -541,6 +553,9 @@ std::string Attribute::getAsString(bool InAttrGrp) const {
     OS.flush();
     return Result;
   }
+
+  if (hasAttribute(Attribute::Arm64ECArgSize))
+    return AttrWithBytesToString("arm64ec_argsize");
 
   // Convert target-dependent attributes to strings of the form:
   //
@@ -840,6 +855,10 @@ MemoryEffects AttributeSet::getMemoryEffects() const {
   return SetNode ? SetNode->getMemoryEffects() : MemoryEffects::unknown();
 }
 
+uint64_t AttributeSet::getArm64ECArgSizeBytes() const {
+  return SetNode ? SetNode->getArm64ECArgSizeBytes() : 0;
+}
+
 std::string AttributeSet::getAsString(bool InAttrGrp) const {
   return SetNode ? SetNode->getAsString(InAttrGrp) : "";
 }
@@ -1022,6 +1041,12 @@ MemoryEffects AttributeSetNode::getMemoryEffects() const {
   if (auto A = findEnumAttribute(Attribute::Memory))
     return A->getMemoryEffects();
   return MemoryEffects::unknown();
+}
+
+uint64_t AttributeSetNode::getArm64ECArgSizeBytes() const {
+  if (auto A = findEnumAttribute(Attribute::Arm64ECArgSize))
+    return A->getArm64ECArgSizeBytes();
+  return 0;
 }
 
 std::string AttributeSetNode::getAsString(bool InAttrGrp) const {
@@ -1580,6 +1605,14 @@ MemoryEffects AttributeList::getMemoryEffects() const {
   return getFnAttrs().getMemoryEffects();
 }
 
+uint64_t AttributeList::getRetArm64ECArgSizeBytes() const {
+  return getRetAttrs().getArm64ECArgSizeBytes();
+}
+
+uint64_t AttributeList::getParamArm64ECArgSizeBytes(unsigned Index) const {
+  return getParamAttrs(Index).getArm64ECArgSizeBytes();
+}
+
 std::string AttributeList::getAsString(unsigned Index, bool InAttrGrp) const {
   return getAttributes(Index).getAsString(InAttrGrp);
 }
@@ -1797,6 +1830,10 @@ AttrBuilder &AttrBuilder::addVScaleRangeAttrFromRawRepr(uint64_t RawArgs) {
     return *this;
 
   return addRawIntAttr(Attribute::VScaleRange, RawArgs);
+}
+
+AttrBuilder &AttrBuilder::addArm64ECArgSizeAttr(uint64_t Bytes) {
+  return addRawIntAttr(Attribute::Arm64ECArgSize, Bytes);
 }
 
 AttrBuilder &AttrBuilder::addUWTableAttr(UWTableKind Kind) {

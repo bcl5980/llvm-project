@@ -1463,6 +1463,20 @@ bool LLParser::parseEnumAttribute(Attribute::AttrKind Attr, AttrBuilder &B,
     if (!ME)
       return true;
     B.addMemoryAttr(*ME);
+  }
+  case Attribute::Arm64ECArgSize: {
+    if (!EatIfPresent(lltok::kw_arm64ec_argsize))
+      return false;
+    LocTy ParenLoc = Lex.getLoc();
+    if (!EatIfPresent(lltok::lparen))
+      return error(ParenLoc, "expected '('");
+    uint64_t Bytes = 0;
+    if (parseUInt64(Bytes))
+      return true;
+    ParenLoc = Lex.getLoc();
+    if (!EatIfPresent(lltok::rparen))
+      return error(ParenLoc, "expected ')'");
+    B.addArm64ECArgSizeAttr(Bytes);
     return false;
   }
   default:
