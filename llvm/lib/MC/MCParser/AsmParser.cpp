@@ -447,6 +447,7 @@ private:
     DK_REFERENCE,
     DK_WEAK_DEFINITION,
     DK_WEAK_REFERENCE,
+    DK_WEAK_ANTI_DEPENDENCY,
     DK_WEAK_DEF_CAN_BE_HIDDEN,
     DK_COLD,
     DK_COMM,
@@ -2121,6 +2122,8 @@ bool AsmParser::parseStatement(ParseStatementInfo &Info,
       return parseDirectiveSymbolAttribute(MCSA_WeakReference);
     case DK_WEAK_DEF_CAN_BE_HIDDEN:
       return parseDirectiveSymbolAttribute(MCSA_WeakDefAutoPrivate);
+    case DK_WEAK_ANTI_DEPENDENCY:
+      return parseDirectiveSymbolAttribute(MCSA_WeakAntiDependency);
     case DK_COLD:
       return parseDirectiveSymbolAttribute(MCSA_Cold);
     case DK_COMM:
@@ -5477,6 +5480,7 @@ void AsmParser::initializeDirectiveKindMap() {
   DirectiveKindMap[".weak_definition"] = DK_WEAK_DEFINITION;
   DirectiveKindMap[".weak_reference"] = DK_WEAK_REFERENCE;
   DirectiveKindMap[".weak_def_can_be_hidden"] = DK_WEAK_DEF_CAN_BE_HIDDEN;
+  DirectiveKindMap[".weak_anti_dependency"] = DK_WEAK_ANTI_DEPENDENCY;
   DirectiveKindMap[".cold"] = DK_COLD;
   DirectiveKindMap[".comm"] = DK_COMM;
   DirectiveKindMap[".common"] = DK_COMMON;

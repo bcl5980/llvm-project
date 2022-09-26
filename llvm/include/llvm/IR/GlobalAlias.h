@@ -31,6 +31,8 @@ class GlobalAlias : public GlobalValue, public ilist_node<GlobalAlias> {
   GlobalAlias(Type *Ty, unsigned AddressSpace, LinkageTypes Linkage,
               const Twine &Name, Constant *Aliasee, Module *Parent);
 
+  bool IsAntiDependency;
+
 public:
   GlobalAlias(const GlobalAlias &) = delete;
   GlobalAlias &operator=(const GlobalAlias &) = delete;
@@ -91,6 +93,9 @@ public:
     return const_cast<GlobalObject *>(
         static_cast<const GlobalAlias *>(this)->getAliaseeObject());
   }
+
+  bool isAntiDependency() const { return IsAntiDependency; }
+  void setIsAntiDependency(bool Val) { IsAntiDependency = Val; }
 
   static bool isValidLinkage(LinkageTypes L) {
     return isExternalLinkage(L) || isLocalLinkage(L) ||

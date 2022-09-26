@@ -598,11 +598,13 @@ void AArch64Arm64ECCallLowering::lowerDirectCall(CallBase *CB, Function *F) {
   auto *NativeAlias = GlobalAlias::create("", CallThunk);
   NativeAlias->takeName(F);
   NativeAlias->setLinkage(GlobalValue::WeakODRLinkage);
+  NativeAlias->setIsAntiDependency(true);
   F->replaceAllUsesWith(NativeAlias);
   F->eraseFromParent();
 
   auto *X86Alias = GlobalAlias::create(X86SignName, NativeAlias);
   X86Alias->setLinkage(GlobalValue::WeakODRLinkage);
+  X86Alias->setIsAntiDependency(true);
 
   BasicBlock *BB = BasicBlock::Create(M->getContext(), "", CallThunk);
   IRBuilder<> IRB(BB);
@@ -675,6 +677,7 @@ bool AArch64Arm64ECCallLowering::genEntryThunk(Function &F) {
     auto *Alias = GlobalAlias::create("", &F);
     Alias->takeName(&F);
     Alias->setLinkage(GlobalValue::WeakODRLinkage);
+    Alias->setIsAntiDependency(true);
     F.setName(Arm64SignName);
     F.setComdat(M->getOrInsertComdat(FuncName));
   }

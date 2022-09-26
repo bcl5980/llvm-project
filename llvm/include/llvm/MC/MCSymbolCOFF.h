@@ -24,6 +24,7 @@ class MCSymbolCOFF : public MCSymbol {
 
     SF_WeakExternal = 0x0100,
     SF_SafeSEH = 0x0200,
+    SF_AntiDependency = 0x0400,
   };
 
 public:
@@ -56,6 +57,13 @@ public:
   }
   void setIsSafeSEH() const {
     modifyFlags(SF_SafeSEH, SF_SafeSEH);
+  }
+
+  bool isAntiDependency() const { 
+    return getFlags() & SF_AntiDependency; 
+  }
+  void setIsAntiDependency() const {
+    modifyFlags(SF_AntiDependency, SF_AntiDependency);
   }
 
   static bool classof(const MCSymbol *S) { return S->isCOFF(); }

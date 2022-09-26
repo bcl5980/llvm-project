@@ -415,8 +415,12 @@ void WinCOFFObjectWriter::DefineSymbol(const MCSymbol &MCSym,
     memset(&Sym->Aux[0], 0, sizeof(Sym->Aux[0]));
     Sym->Aux[0].AuxType = ATWeakExternal;
     Sym->Aux[0].Aux.WeakExternal.TagIndex = 0;
-    Sym->Aux[0].Aux.WeakExternal.Characteristics =
-        COFF::IMAGE_WEAK_EXTERN_SEARCH_ALIAS;
+    if (cast<MCSymbolCOFF>(MCSym).isAntiDependency())
+      Sym->Aux[0].Aux.WeakExternal.Characteristics =
+          COFF::IMAGE_WEAK_EXTERN_ANTI_DEPENDENCY;
+    else
+      Sym->Aux[0].Aux.WeakExternal.Characteristics =
+          COFF::IMAGE_WEAK_EXTERN_SEARCH_ALIAS;
   } else {
     if (!Base)
       Sym->Data.SectionNumber = COFF::IMAGE_SYM_ABSOLUTE;

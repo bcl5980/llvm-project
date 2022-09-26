@@ -1960,6 +1960,8 @@ void AsmPrinter::emitGlobalAlias(Module &M, const GlobalAlias &GA) {
 
   if (GA.hasExternalLinkage() || !MAI->getWeakRefDirective())
     OutStreamer->emitSymbolAttribute(Name, MCSA_Global);
+  else if (GA.isAntiDependency())
+    OutStreamer->emitSymbolAttribute(Name, MCSA_WeakAntiDependency);
   else if (GA.hasWeakLinkage() || GA.hasLinkOnceLinkage())
     OutStreamer->emitSymbolAttribute(Name, MCSA_WeakReference);
   else

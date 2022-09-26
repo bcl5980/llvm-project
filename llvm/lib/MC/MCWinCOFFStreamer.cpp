@@ -114,6 +114,9 @@ bool MCWinCOFFStreamer::emitSymbolAttribute(MCSymbol *S,
 
   switch (Attribute) {
   default: return false;
+  case MCSA_WeakAntiDependency:
+    Symbol->setIsAntiDependency();
+		LLVM_FALLTHROUGH;
   case MCSA_WeakReference:
   case MCSA_Weak:
     Symbol->setIsWeakExternal();

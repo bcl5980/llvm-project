@@ -764,6 +764,7 @@ bool MCAsmStreamer::emitSymbolAttribute(MCSymbol *Symbol,
       // .weak_reference
   case MCSA_WeakReference:  OS << MAI->getWeakRefDirective(); break;
   case MCSA_WeakDefAutoPrivate: OS << "\t.weak_def_can_be_hidden\t"; break;
+  case MCSA_WeakAntiDependency: OS << "\t.weak_anti_dependency\t"; break;
   case MCSA_Cold:
     // Assemblers currently do not support a .cold directive.
   case MCSA_Exported:
