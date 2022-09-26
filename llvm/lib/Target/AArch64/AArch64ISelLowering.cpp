@@ -7448,6 +7448,10 @@ AArch64TargetLowering::LowerCall(CallLoweringInfo &CLI,
       const char *Sym = S->getSymbol();
       Callee = DAG.getTargetExternalSymbol(Sym, PtrVT, 0);
     }
+  } else if (IsArm64EcThunk) {
+    Chain = DAG.getCopyToReg(Chain, DL, AArch64::X16, Callee, InFlag);
+    InFlag = Chain.getValue(1);
+    Callee = DAG.getRegister(AArch64::X16, MVT::i64);
   }
 
   // We don't usually want to end the call-sequence here because we would tidy

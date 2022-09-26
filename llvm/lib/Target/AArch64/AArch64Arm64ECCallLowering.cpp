@@ -16,6 +16,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "AArch64.h"
+#include "llvm/ADT/SmallSet.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/Statistic.h"
 #include "llvm/ADT/Triple.h"
@@ -65,8 +66,11 @@ private:
   Constant *GuardFnGlobal = nullptr;
   Module *M = nullptr;
 
+  using HybridType = std::tuple<GlobalValue *, GlobalValue *, HybridInfoType>;
+
   StructType *HybridInfoStructType = nullptr;
-  SmallVector<llvm::Constant *, 64> HybridInfoTable;
+  SmallVector<llvm::Constant *, 32> HybridInfoTable;
+  SmallSet<HybridType, 32> HybridInfoSet;
 
   Type *I8PtrTy;
   Type *I64Ty;
@@ -82,13 +86,17 @@ private:
   Type *canonicalizeThunkType(Type *T, Align Alignment, bool EntryThunk,
                               bool Ret, uint64_t ArgSizeBytes,
                               raw_ostream &Out);
-  void addHybridInfo(Function *From, Function *To, HybridInfoType InfoType);
+  void addHybridInfo(GlobalValue *From, GlobalValue *To,
+                     HybridInfoType InfoType);
 
-  Function *buildEntryThunk(Function *F);
-  Function *buildExitThunk(CallBase *CB);
-  void lowerCall(CallBase *CB);
-  bool genExitThunk(Function &F);
   bool genEntryThunk(Function &F);
+  Function *buildEntryThunk(Function *F);
+
+  bool genExitThunk(Function &F);
+  Function *buildExitThunk(CallBase *CB);
+
+  void lowerCall(CallBase *CB);
+  void lowerDirectCall(CallBase *CB, Function *F);
 
   static bool passByRefInX86(unsigned ArgSize);
   static bool isSRetInX86(unsigned ArgSize);
@@ -99,6 +107,46 @@ private:
 char AArch64Arm64ECCallLowering::ID = 0;
 INITIALIZE_PASS(AArch64Arm64ECCallLowering, DEBUG_TYPE,
                 ARM64EC_CALL_LOWERING_NAME, false, false)
+
+static bool isArm64ECSymbol(const std::string &MangleName) {
+  size_t Index = MangleName.find('#');
+  if (Index == 0)
+    return true;
+
+  Index = MangleName.find("@@$$h");
+  if (Index != std::string::npos)
+    return true;
+
+  return false;
+}
+
+static std::string toArm64ECMangle(std::string MangleName) {
+  if (!isArm64ECSymbol(MangleName)) {
+    if (MangleName._Starts_with("?")) {
+      size_t InsertIdx = MangleName.find("@@");
+      if (InsertIdx != std::string::npos)
+        MangleName.insert(InsertIdx + 2, "$$h");
+    } else {
+      MangleName.insert(0, "#");
+    }
+  }
+
+  return MangleName;
+}
+
+static std::string toNormalMangle(std::string MangleName) {
+  size_t Index = MangleName.find('#');
+  if (Index != std::string::npos) {
+    MangleName.erase(MangleName.begin() + Index);
+  } else {
+    Index = MangleName.find("$$h");
+    if (Index != std::string::npos)
+      MangleName.erase(MangleName.begin() + Index,
+                       MangleName.begin() + Index + 3);
+  }
+
+  return MangleName;
+}
 
 bool AArch64Arm64ECCallLowering::passByRefInX86(unsigned ArgSize) {
   if (ArgSize > 16)
@@ -274,18 +322,19 @@ Type *AArch64Arm64ECCallLowering::canonicalizeThunkType(
   return CanonicalizedTy;
 }
 
-void AArch64Arm64ECCallLowering::addHybridInfo(Function *From, Function *To,
+void AArch64Arm64ECCallLowering::addHybridInfo(GlobalValue *From,
+                                               GlobalValue *To,
                                                HybridInfoType InfoType) {
-  Type *I8PtrTy = Type::getInt8PtrTy(M->getContext());
+  if (HybridInfoSet.insert(std::make_tuple(From, To, InfoType)).second) {
+    // FIXME: do we really need to consider non-opaque pointer mode?
+    Constant *HybridInfo[3] = {
+        ConstantExpr::getBitCast(From, I8PtrTy),
+        ConstantExpr::getBitCast(To, I8PtrTy),
+        ConstantInt::get(Type::getInt32Ty(M->getContext()), InfoType)};
 
-  // FIXME: do we really need to consider non-opaque pointer mode?
-  Constant *HybridInfo[3] = {
-      ConstantExpr::getBitCast(From, I8PtrTy),
-      ConstantExpr::getBitCast(To, I8PtrTy),
-      ConstantInt::get(Type::getInt32Ty(M->getContext()), InfoType)};
-
-  HybridInfoTable.push_back(
-      ConstantStruct::get(HybridInfoStructType, HybridInfo));
+    HybridInfoTable.push_back(
+        ConstantStruct::get(HybridInfoStructType, HybridInfo));
+  }
 }
 
 Function *AArch64Arm64ECCallLowering::buildEntryThunk(Function *F) {
@@ -389,6 +438,8 @@ Function *AArch64Arm64ECCallLowering::buildEntryThunk(Function *F) {
   if (ArgDelta == 2)
     IRB.CreateStore(Call, Thunk->getArg(1));
 
+  // FIXME: there is no actual return for entry thunk. We need to call
+  // __os_arm64x_dispatch_ret to return to x86 emulator.
   if (X64RetType->isVoidTy())
     IRB.CreateRetVoid();
   else
@@ -514,13 +565,71 @@ Function *AArch64Arm64ECCallLowering::buildExitThunk(CallBase *CB) {
   return F;
 }
 
+void AArch64Arm64ECCallLowering::lowerDirectCall(CallBase *CB, Function *F) {
+  if (F->hasDLLImportStorageClass()) {
+    Function *Thunk = buildExitThunk(CB);
+    addHybridInfo(F, Thunk, Native_To_Icall_Thunk);
+    return;
+  }
+
+  std::string FuncName = F->getName().str();
+  std::string Arm64SignName = toArm64ECMangle(FuncName);
+  std::string CallThunkName = Arm64SignName;
+  if (CallThunkName._Starts_with("#"))
+    CallThunkName = CallThunkName + "$exit_thunk";
+  else
+    CallThunkName =
+        CallThunkName.insert(CallThunkName.find("@@"), "$exit_thunk");
+  Function *CallThunk = M->getFunction(CallThunkName);
+  if (CallThunk)
+    return;
+
+  Type *RetTy = F->getReturnType();
+  FunctionType *FT = F->getFunctionType();
+  CallThunk =
+      Function::Create(FT, GlobalValue::ExternalLinkage, 0, CallThunkName, M);
+  CallThunk->setComdat(M->getOrInsertComdat(CallThunkName));
+  CallThunk->setSection(".wowthk$aa");
+
+  std::string X86SignName = toNormalMangle(Arm64SignName);
+  if (!isArm64ECSymbol(FuncName))
+    F->setName(Arm64SignName);
+
+  auto *NativeAlias = GlobalAlias::create("", CallThunk);
+  NativeAlias->takeName(F);
+  NativeAlias->setLinkage(GlobalValue::WeakODRLinkage);
+  F->replaceAllUsesWith(NativeAlias);
+  F->eraseFromParent();
+
+  auto *X86Alias = GlobalAlias::create(X86SignName, NativeAlias);
+  X86Alias->setLinkage(GlobalValue::WeakODRLinkage);
+
+  BasicBlock *BB = BasicBlock::Create(M->getContext(), "", CallThunk);
+  IRBuilder<> IRB(BB);
+
+  SmallVector<Value *> Args;
+  for (auto &Arg : CallThunk->args())
+    Args.push_back(&Arg);
+  Value *RetVal = IRB.CreateCall(FT, X86Alias, Args);
+  if (RetTy->isVoidTy())
+    IRB.CreateRetVoid();
+  else
+    IRB.CreateRet(RetVal);
+
+  genExitThunk(*CallThunk);
+}
+
 void AArch64Arm64ECCallLowering::lowerCall(CallBase *CB) {
   assert(Triple(CB->getModule()->getTargetTriple()).isOSWindows() &&
          "Only applicable for Windows targets");
+  Value *CalledOperand = CB->getCalledOperand();
+  Function *F = dyn_cast<Function>(CalledOperand);
+  if (F != nullptr) {
+    lowerDirectCall(CB, F);
+    return;
+  }
 
   IRBuilder<> B(CB);
-  Value *CalledOperand = CB->getCalledOperand();
-
   // If the indirect call is called within catchpad or cleanuppad,
   // we need to copy "funclet" bundle of the call.
   SmallVector<llvm::OperandBundleDef, 1> Bundles;
@@ -550,11 +659,25 @@ void AArch64Arm64ECCallLowering::lowerCall(CallBase *CB) {
 
   Value *GuardRetVal = B.CreateBitCast(GuardCheck, CalledOperand->getType());
   CB->setCalledOperand(GuardRetVal);
+  if (auto *GV = dyn_cast<GlobalValue>(CalledOperand)) {
+    addHybridInfo(GV, Thunk, Native_To_Icall_Thunk);
+    addHybridInfo(CB->getFunction(), GV, Exitthunk_To_Guest);
+  }
 }
 
 bool AArch64Arm64ECCallLowering::genEntryThunk(Function &F) {
-  if (!F.hasExactDefinition())
+  if (F.isDeclaration() || F.hasLocalLinkage() || F.isIntrinsic())
     return false;
+
+  std::string FuncName = F.getName().str();
+  if (!isArm64ECSymbol(FuncName)) {
+    std::string Arm64SignName = toArm64ECMangle(FuncName);
+    auto *Alias = GlobalAlias::create("", &F);
+    Alias->takeName(&F);
+    Alias->setLinkage(GlobalValue::WeakODRLinkage);
+    F.setName(Arm64SignName);
+    F.setComdat(M->getOrInsertComdat(FuncName));
+  }
 
   Function *Thunk = buildEntryThunk(&F);
   addHybridInfo(&F, Thunk, Native_To_Entrythunk);
@@ -563,7 +686,7 @@ bool AArch64Arm64ECCallLowering::genEntryThunk(Function &F) {
 }
 
 bool AArch64Arm64ECCallLowering::genExitThunk(Function &F) {
-  SmallVector<CallBase *, 8> IndirectCalls;
+  SmallVector<CallBase *, 8> CallsNeedExitThunk;
 
   // Iterate over the instructions to find all indirect call/invoke/callbr
   // instructions. Make a separate list of pointers to indirect
@@ -589,19 +712,19 @@ bool AArch64Arm64ECCallLowering::genExitThunk(Function &F) {
       // need an extra stub to compute the correct callee. Not really
       // understanding how this works.
       if (Function *F = CB->getCalledFunction()) {
-        if (F->isDSOLocal() || F->isIntrinsic())
+        if (!F->isDeclaration() || F->isIntrinsic())
           continue;
       }
 
-      IndirectCalls.push_back(CB);
+      CallsNeedExitThunk.push_back(CB);
       ++Arm64ECCallsLowered;
     }
   }
 
-  for (CallBase *CB : IndirectCalls)
+  for (CallBase *CB : CallsNeedExitThunk)
     lowerCall(CB);
 
-  return IndirectCalls.size() != 0;
+  return CallsNeedExitThunk.size() != 0;
 }
 
 bool AArch64Arm64ECCallLowering::runOnModule(Module &Mod) {
@@ -619,9 +742,9 @@ bool AArch64Arm64ECCallLowering::runOnModule(Module &Mod) {
   GuardFnType = FunctionType::get(I8PtrTy, {I8PtrTy, I8PtrTy}, false);
   GuardFnPtrType = PointerType::get(GuardFnType, 0);
   GuardFnCFGlobal =
-      M->getOrInsertGlobal("__os_arm64x_check_icall_cfg", GuardFnPtrType);
+      M->getOrInsertGlobal("__os_arm64x_dispatch_icall_cfg", GuardFnPtrType);
   GuardFnGlobal =
-      M->getOrInsertGlobal("__os_arm64x_check_icall", GuardFnPtrType);
+      M->getOrInsertGlobal("__os_arm64x_dispatch_icall", GuardFnPtrType);
 
   HybridInfoStructType =
       StructType::get(I8PtrTy, I8PtrTy, Type::getInt32Ty(M->getContext()));

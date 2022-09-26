@@ -5301,23 +5301,6 @@ void CodeGenModule::EmitGlobalFunctionDefinition(GlobalDecl GD,
   if (!GV->isDeclaration())
     return;
 
-  if (getTriple().isWindowsArm64EC()) {
-    // For ARM64EC targets, a function definition's name is mangled differently
-    // from the normal symbol.  We then emit an alias from the normal
-    // symbol to the remangled definition.
-    // FIXME: MSVC uses IMAGE_WEAK_EXTERN_ANTI_DEPENDENCY, we just emit
-    // multiple definition symbols.  Why does this matter?
-    // FIXME: For hybrid_patchable functions, the alias doesn't point
-    // to the function itself; it points to a stub for the compiler.
-    // FIXME: We also need to emit an entry thunk.
-    SmallString<256> MangledName;
-    llvm::raw_svector_ostream Out(MangledName);
-    getCXXABI().getMangleContext().mangleArm64ECFnDef(GD, Out);
-    auto *Alias = llvm::GlobalAlias::create("", GV);
-    Alias->takeName(GV);
-    GV->setName(MangledName);
-  }
-
   // We need to set linkage and visibility on the function before
   // generating code for it because various parts of IR generation
   // want to propagate this information down (e.g. to local static
