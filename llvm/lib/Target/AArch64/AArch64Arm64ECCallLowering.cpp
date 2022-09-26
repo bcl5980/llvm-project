@@ -224,17 +224,22 @@ Type *AArch64Arm64ECCallLowering::canonicalizeThunkType(
 
 Function *AArch64Arm64ECCallLowering::buildExitThunk(CallBase *CB) {
   FunctionType *FT = CB->getFunctionType();
-  bool IsVarArg = FT->isVarArg();
-
   SmallString<256> ExitThunkName;
   llvm::raw_svector_ostream Out(ExitThunkName);
   FunctionType *Ty =
       getThunkType(FT, CB->getAttributes(), /*EntryThunk*/ false, Out);
-  Function *F =
-      Function::Create(Ty, GlobalValue::InternalLinkage, 0, ExitThunkName, M);
+  Function *F = M->getFunction(ExitThunkName);
+  if (F)
+    return F;
+
+  bool IsVarArg = FT->isVarArg();
+  F = Function::Create(Ty, GlobalValue::ExternalLinkage, 0, ExitThunkName, M);
   F->setCallingConv(CallingConv::ARM64EC_Thunk_Native);
   // Copy MSVC, and always set up a frame pointer. (Maybe this isn't necessary.)
   F->addFnAttr("frame-pointer", "all");
+  F->setSection(".wowthk$aa");
+  F->setLinkage(GlobalValue::LinkOnceODRLinkage);
+  F->setComdat(M->getOrInsertComdat(ExitThunkName));
   // Only copy sret from the first argument. For C++ instance methods, clang can
   // stick an sret marking on a later argument, but it doesn't actually affect
   // the ABI, so we can omit it. This avoids triggering a verifier assertion.

@@ -50,8 +50,8 @@ define dso_local i8 @callchar(i8 %x) {
 ; CHECK-NEXT:    .seh_endprologue
 ; CHECK-NEXT:    adrp x8, pfnchar
 ; CHECK-NEXT:    adrp x9, __os_arm64x_check_icall
-; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$i8$i8.1)
-; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$i8$i8.1)
+; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$i8$i8)
+; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$i8$i8)
 ; CHECK-NEXT:    ldr x11, [x8, :lo12:pfnchar]
 ; CHECK-NEXT:    ldr x8, [x9, :lo12:__os_arm64x_check_icall]
 ; CHECK-NEXT:    blr x8
@@ -78,8 +78,8 @@ define dso_local i16 @callshort(i16 %x) {
 ; CHECK-NEXT:    .seh_endprologue
 ; CHECK-NEXT:    adrp x8, pfnshort
 ; CHECK-NEXT:    adrp x9, __os_arm64x_check_icall
-; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$i8$i8.2)
-; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$i8$i8.2)
+; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$i8$i8)
+; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$i8$i8)
 ; CHECK-NEXT:    ldr x11, [x8, :lo12:pfnshort]
 ; CHECK-NEXT:    ldr x8, [x9, :lo12:__os_arm64x_check_icall]
 ; CHECK-NEXT:    blr x8
@@ -106,8 +106,8 @@ define dso_local i16 @callwchar_t(i16 %x) {
 ; CHECK-NEXT:    .seh_endprologue
 ; CHECK-NEXT:    adrp x8, pfnwchar_t
 ; CHECK-NEXT:    adrp x9, __os_arm64x_check_icall
-; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$i8$i8.3)
-; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$i8$i8.3)
+; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$i8$i8)
+; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$i8$i8)
 ; CHECK-NEXT:    ldr x11, [x8, :lo12:pfnwchar_t]
 ; CHECK-NEXT:    ldr x8, [x9, :lo12:__os_arm64x_check_icall]
 ; CHECK-NEXT:    blr x8
@@ -134,8 +134,8 @@ define dso_local i32 @callint(i32 %x) {
 ; CHECK-NEXT:    .seh_endprologue
 ; CHECK-NEXT:    adrp x8, pfnint
 ; CHECK-NEXT:    adrp x9, __os_arm64x_check_icall
-; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$i8$i8.4)
-; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$i8$i8.4)
+; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$i8$i8)
+; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$i8$i8)
 ; CHECK-NEXT:    ldr x11, [x8, :lo12:pfnint]
 ; CHECK-NEXT:    ldr x8, [x9, :lo12:__os_arm64x_check_icall]
 ; CHECK-NEXT:    blr x8
@@ -162,8 +162,8 @@ define dso_local i64 @calli64(i64 %x) {
 ; CHECK-NEXT:    .seh_endprologue
 ; CHECK-NEXT:    adrp x8, pfni64
 ; CHECK-NEXT:    adrp x9, __os_arm64x_check_icall
-; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$i8$i8.5)
-; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$i8$i8.5)
+; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$i8$i8)
+; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$i8$i8)
 ; CHECK-NEXT:    ldr x11, [x8, :lo12:pfni64]
 ; CHECK-NEXT:    ldr x8, [x9, :lo12:__os_arm64x_check_icall]
 ; CHECK-NEXT:    blr x8
@@ -246,8 +246,8 @@ define dso_local double @calllongdouble(double %x) {
 ; CHECK-NEXT:    .seh_endprologue
 ; CHECK-NEXT:    adrp x8, pfnlongdouble
 ; CHECK-NEXT:    adrp x9, __os_arm64x_check_icall
-; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$d$d.6)
-; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$d$d.6)
+; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$d$d)
+; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$d$d)
 ; CHECK-NEXT:    ldr x11, [x8, :lo12:pfnlongdouble]
 ; CHECK-NEXT:    ldr x8, [x9, :lo12:__os_arm64x_check_icall]
 ; CHECK-NEXT:    blr x8
@@ -274,8 +274,8 @@ define dso_local ptr @callVOIDP(ptr %x) {
 ; CHECK-NEXT:    .seh_endprologue
 ; CHECK-NEXT:    adrp x8, pfnVOIDP
 ; CHECK-NEXT:    adrp x9, __os_arm64x_check_icall
-; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$i8$i8.7)
-; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$i8$i8.7)
+; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$i8$i8)
+; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$i8$i8)
 ; CHECK-NEXT:    ldr x11, [x8, :lo12:pfnVOIDP]
 ; CHECK-NEXT:    ldr x8, [x9, :lo12:__os_arm64x_check_icall]
 ; CHECK-NEXT:    blr x8

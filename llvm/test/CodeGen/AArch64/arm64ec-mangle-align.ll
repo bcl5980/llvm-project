@@ -234,8 +234,8 @@ define dso_local arm64ec_argsize(8) i64 @callstruct6(i64 arm64ec_argsize(8) %x.c
 ; CHECK-NEXT:    .seh_endprologue
 ; CHECK-NEXT:    adrp x8, pfnstruct6
 ; CHECK-NEXT:    adrp x9, __os_arm64x_check_icall
-; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$m8$m8.1)
-; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$m8$m8.1)
+; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$m8$m8)
+; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$m8$m8)
 ; CHECK-NEXT:    ldr x11, [x8, :lo12:pfnstruct6]
 ; CHECK-NEXT:    ldr x8, [x9, :lo12:__os_arm64x_check_icall]
 ; CHECK-NEXT:    blr x8
@@ -262,8 +262,8 @@ define dso_local arm64ec_argsize(8) i64 @callstruct7(i64 arm64ec_argsize(8) %x.c
 ; CHECK-NEXT:    .seh_endprologue
 ; CHECK-NEXT:    adrp x8, pfnstruct7
 ; CHECK-NEXT:    adrp x9, __os_arm64x_check_icall
-; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$m8$m8.2)
-; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$m8$m8.2)
+; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$m8$m8)
+; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$m8$m8)
 ; CHECK-NEXT:    ldr x11, [x8, :lo12:pfnstruct7]
 ; CHECK-NEXT:    ldr x8, [x9, :lo12:__os_arm64x_check_icall]
 ; CHECK-NEXT:    blr x8
@@ -440,8 +440,8 @@ define dso_local arm64ec_argsize(64) void @callstruct12(ptr sret(%struct.s12) al
 ; CHECK-NEXT:    ldr x11, [x9, :lo12:pfnstruct12]
 ; CHECK-NEXT:    stp q2, q3, [sp, #32]
 ; CHECK-NEXT:    ldr x9, [x10, :lo12:__os_arm64x_check_icall]
-; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$m64a64$i8.3)
-; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$m64a64$i8.3)
+; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$m64a64$i8)
+; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$m64a64$i8)
 ; CHECK-NEXT:    blr x9
 ; CHECK-NEXT:    mov x0, sp
 ; CHECK-NEXT:    blr x11
@@ -500,8 +500,8 @@ define dso_local arm64ec_argsize(16) [2 x i64] @callstruct14([2 x i64] arm64ec_a
 ; CHECK-NEXT:    .seh_endprologue
 ; CHECK-NEXT:    adrp x8, pfnstruct14
 ; CHECK-NEXT:    adrp x9, __os_arm64x_check_icall
-; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$m16$m16.4)
-; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$m16$m16.4)
+; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$m16$m16)
+; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$m16$m16)
 ; CHECK-NEXT:    ldr x11, [x8, :lo12:pfnstruct14]
 ; CHECK-NEXT:    ldr x8, [x9, :lo12:__os_arm64x_check_icall]
 ; CHECK-NEXT:    blr x8
@@ -528,8 +528,8 @@ define dso_local arm64ec_argsize(16) i128 @callstruct15(i128 arm64ec_argsize(16)
 ; CHECK-NEXT:    .seh_endprologue
 ; CHECK-NEXT:    adrp x8, pfnstruct15
 ; CHECK-NEXT:    adrp x9, __os_arm64x_check_icall
-; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$m16a16$m16a16.5)
-; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$m16a16$m16a16.5)
+; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$m16a16$m16a16)
+; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$m16a16$m16a16)
 ; CHECK-NEXT:    ldr x11, [x8, :lo12:pfnstruct15]
 ; CHECK-NEXT:    ldr x8, [x9, :lo12:__os_arm64x_check_icall]
 ; CHECK-NEXT:    blr x8
@@ -565,8 +565,8 @@ define dso_local arm64ec_argsize(32) void @callstruct16(ptr sret(%struct.s16) al
 ; CHECK-NEXT:    ldr x11, [x9, :lo12:pfnstruct16]
 ; CHECK-NEXT:    stp q0, q1, [sp]
 ; CHECK-NEXT:    ldr x9, [x10, :lo12:__os_arm64x_check_icall]
-; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$m32a32$i8.6)
-; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$m32a32$i8.6)
+; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$m32a32$i8)
+; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$m32a32$i8)
 ; CHECK-NEXT:    blr x9
 ; CHECK-NEXT:    mov x0, sp
 ; CHECK-NEXT:    blr x11
@@ -608,8 +608,8 @@ define dso_local arm64ec_argsize(64) void @callstruct17(ptr sret(%struct.s17) al
 ; CHECK-NEXT:    ldr x11, [x9, :lo12:pfnstruct17]
 ; CHECK-NEXT:    stp q2, q3, [sp, #32]
 ; CHECK-NEXT:    ldr x9, [x10, :lo12:__os_arm64x_check_icall]
-; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$m64a64$i8.7)
-; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$m64a64$i8.7)
+; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$m64a64$i8)
+; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$m64a64$i8)
 ; CHECK-NEXT:    blr x9
 ; CHECK-NEXT:    mov x0, sp
 ; CHECK-NEXT:    blr x11
@@ -865,8 +865,8 @@ define dso_local arm64ec_argsize(64) void @callstructf3(ptr sret(%struct.f3) ali
 ; CHECK-NEXT:    ldr x11, [x9, :lo12:pfnstructf3]
 ; CHECK-NEXT:    stp q2, q3, [sp, #32]
 ; CHECK-NEXT:    ldr x9, [x10, :lo12:__os_arm64x_check_icall]
-; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$m64a64$i8.8)
-; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$m64a64$i8.8)
+; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$m64a64$i8)
+; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$m64a64$i8)
 ; CHECK-NEXT:    blr x9
 ; CHECK-NEXT:    mov x0, sp
 ; CHECK-NEXT:    blr x11
@@ -905,8 +905,8 @@ define dso_local arm64ec_argsize(32) void @callstructf4(ptr sret(%struct.f4) ali
 ; CHECK-NEXT:    ldr x11, [x9, :lo12:pfnstructf4]
 ; CHECK-NEXT:    stp q0, q1, [sp]
 ; CHECK-NEXT:    ldr x9, [x10, :lo12:__os_arm64x_check_icall]
-; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$m32a32$i8.9)
-; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$m32a32$i8.9)
+; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$m32a32$i8)
+; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$m32a32$i8)
 ; CHECK-NEXT:    blr x9
 ; CHECK-NEXT:    mov x0, sp
 ; CHECK-NEXT:    blr x11
@@ -945,8 +945,8 @@ define dso_local arm64ec_argsize(32) void @callstructf5(ptr sret(%struct.f5) ali
 ; CHECK-NEXT:    ldr x11, [x9, :lo12:pfnstructf5]
 ; CHECK-NEXT:    stp q0, q1, [sp]
 ; CHECK-NEXT:    ldr x9, [x10, :lo12:__os_arm64x_check_icall]
-; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$m32a32$i8.10)
-; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$m32a32$i8.10)
+; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$m32a32$i8)
+; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$m32a32$i8)
 ; CHECK-NEXT:    blr x9
 ; CHECK-NEXT:    mov x0, sp
 ; CHECK-NEXT:    blr x11
@@ -987,8 +987,8 @@ define dso_local arm64ec_argsize(64) void @callstructd2(ptr sret(%struct.d2) ali
 ; CHECK-NEXT:    ldr x11, [x9, :lo12:pfnstructd2]
 ; CHECK-NEXT:    stp q2, q3, [sp, #32]
 ; CHECK-NEXT:    ldr x9, [x10, :lo12:__os_arm64x_check_icall]
-; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$m64a64$i8.11)
-; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$m64a64$i8.11)
+; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$m64a64$i8)
+; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$m64a64$i8)
 ; CHECK-NEXT:    blr x9
 ; CHECK-NEXT:    mov x0, sp
 ; CHECK-NEXT:    blr x11
@@ -1029,8 +1029,8 @@ define dso_local arm64ec_argsize(64) void @callstructd3(ptr sret(%struct.d3) ali
 ; CHECK-NEXT:    ldr x11, [x9, :lo12:pfnstructd3]
 ; CHECK-NEXT:    stp q2, q3, [sp, #32]
 ; CHECK-NEXT:    ldr x9, [x10, :lo12:__os_arm64x_check_icall]
-; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$m64a64$i8.12)
-; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$m64a64$i8.12)
+; CHECK-NEXT:    adrp x10, ($iexit_thunk$cdecl$m64a64$i8)
+; CHECK-NEXT:    add x10, x10, :lo12:($iexit_thunk$cdecl$m64a64$i8)
 ; CHECK-NEXT:    blr x9
 ; CHECK-NEXT:    mov x0, sp
 ; CHECK-NEXT:    blr x11
