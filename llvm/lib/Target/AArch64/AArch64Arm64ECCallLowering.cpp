@@ -54,24 +54,47 @@ private:
   Constant *GuardFnCFGlobal = nullptr;
   Constant *GuardFnGlobal = nullptr;
   Module *M = nullptr;
+
+  Type *I8PtrTy;
+  Type *I64Ty;
+  Type *VoidTy;
+
+  FunctionType *getThunkType(FunctionType *FT, AttributeList AttrList,
+                             bool entry, raw_ostream &Out);
+  Type *getThunkRetType(FunctionType *FT, AttributeList AttrList,
+                        bool EntryThunk, raw_ostream &Out);
+  void getThunkArgTypes(FunctionType *FT, AttributeList AttrList,
+                        bool EntryThunk, SmallVector<Type *> &ArgTypes,
+                        raw_ostream &Out);
+  Type *canonicalizeThunkType(Type *T, Align Alignment, bool EntryThunk,
+                              bool Ret, uint64_t ArgSizeBytes,
+                              raw_ostream &Out);
 };
 
 } // end anonymous namespace
 
-Function *AArch64Arm64ECCallLowering::buildExitThunk(CallBase *CB) {
-  FunctionType *FT = CB->getFunctionType();
-  Type *RetTy = FT->getReturnType();
-  bool IsVarArg = FT->isVarArg();
-  Type *PtrTy = Type::getInt8PtrTy(M->getContext());
-  Type *I64Ty = Type::getInt64Ty(M->getContext());
+FunctionType *AArch64Arm64ECCallLowering::getThunkType(FunctionType *FT,
+                                                       AttributeList AttrList,
+                                                       bool EntryThunk,
+                                                       raw_ostream &Out) {
+  Out << (EntryThunk ? "$ientry_thunk$cdecl$" : "$iexit_thunk$cdecl$");
+
+  Type *RetTy = getThunkRetType(FT, AttrList, EntryThunk, Out);
 
   SmallVector<Type *> DefArgTypes;
-  // The first argument to a thunk is the called function, stored in x9.
-  // (Normally, we won't explicitly refer to this in the assembly; it just
-  // gets passed on by the call.)
-  DefArgTypes.push_back(PtrTy);
+  DefArgTypes.push_back(I8PtrTy);
+  getThunkArgTypes(FT, AttrList, EntryThunk, DefArgTypes, Out);
 
-  if (IsVarArg) {
+  return FunctionType::get(RetTy, DefArgTypes, false);
+}
+
+void AArch64Arm64ECCallLowering::getThunkArgTypes(FunctionType *FT,
+                                                  AttributeList AttrList,
+                                                  bool EntryThunk,
+                                                  SmallVector<Type *> &ArgTypes,
+                                                  raw_ostream &Out) {
+  Out << "$";
+  if (FT->isVarArg()) {
     // We treat the variadic function's exit thunk as a normal function
     // with type:
     //   rettype exitthunk(
@@ -81,20 +104,134 @@ Function *AArch64Arm64ECCallLowering::buildExitThunk(CallBase *CB) {
     // x0-x3 is the arguments be stored in registers.
     // x4 is the address of the arguments on the stack.
     // x5 is the size of the arguments on the stack.
-    DefArgTypes.push_back(PtrTy);
+    Out << "varargs";
+    ArgTypes.push_back(I8PtrTy);
     for (int i = 0; i < 3; i++)
-      DefArgTypes.push_back(I64Ty);
+      ArgTypes.push_back(I64Ty);
 
-    DefArgTypes.push_back(PtrTy);
-    DefArgTypes.push_back(I64Ty);
+    ArgTypes.push_back(I8PtrTy);
+    ArgTypes.push_back(I64Ty);
+    return;
+  }
+
+  if (FT->getNumParams() == 0) {
+    Out << "v";
+    return;
+  }
+
+  unsigned I = 0;
+  if (AttrList.getParamAttr(I, Attribute::StructRet).isValid()) {
+    ArgTypes.push_back(FT->getParamType(I));
+    I++;
+  }
+
+  if (I == FT->getNumParams()) {
+    Out << "v";
+    return;
+  }
+
+  for (unsigned E = FT->getNumParams(); I != E; ++I) {
+    Align ParamAlign = AttrList.getParamAlignment(I).valueOrOne();
+    uint64_t ArgSizeBytes = AttrList.getParamArm64ECArgSizeBytes(I);
+    ArgTypes.push_back(canonicalizeThunkType(FT->getParamType(I), ParamAlign,
+                                             EntryThunk,
+                                             /*Ret*/ false, ArgSizeBytes, Out));
+  }
+}
+
+Type *AArch64Arm64ECCallLowering::getThunkRetType(FunctionType *FT,
+                                                  AttributeList AttrList,
+                                                  bool EntryThunk,
+                                                  raw_ostream &Out) {
+  Type *T = FT->getReturnType();
+  uint64_t ArgSizeBytes = AttrList.getRetArm64ECArgSizeBytes();
+  if (T->isVoidTy()) {
+    if (FT->getNumParams()) {
+      auto Attr = AttrList.getParamAttr(0, Attribute::StructRet);
+      if (Attr.isValid()) {
+        Type *SRetType = Attr.getValueAsType();
+        Align SRetAlign = AttrList.getParamAlignment(0).valueOrOne();
+        canonicalizeThunkType(SRetType, SRetAlign, EntryThunk, /*Ret*/ true,
+                              ArgSizeBytes, Out);
+        return VoidTy;
+      }
+    }
+
+    Out << "v";
+    return VoidTy;
+  }
+
+  return canonicalizeThunkType(T, Align(), EntryThunk, /*Ret*/ true,
+                               ArgSizeBytes, Out);
+}
+
+Type *AArch64Arm64ECCallLowering::canonicalizeThunkType(
+    Type *T, Align Alignment, bool EntryThunk, bool Ret, uint64_t ArgSizeBytes,
+    raw_ostream &Out) {
+  Type *CanonicalizedTy = T;
+  auto &DL = M->getDataLayout();
+  if (T->isFloatTy()) {
+    Out << "f";
+  } else if (T->isDoubleTy()) {
+    Out << "d";
+  } else if (T->isIntegerTy(128)) {
+    Out << "m16a16";
   } else {
-    for (unsigned i = 0; i < CB->arg_size(); ++i) {
-      DefArgTypes.push_back(CB->getArgOperand(i)->getType());
+    if (auto *StructTy = dyn_cast<StructType>(T))
+      if (StructTy->getNumElements() == 1)
+        CanonicalizedTy = T = StructTy->getElementType(0);
+
+    if (T->isArrayTy()) {
+      Type *ElementTy = T->getArrayElementType();
+      uint64_t ElementCnt = T->getArrayNumElements();
+      uint64_t ElementSizePerBytes = DL.getTypeSizeInBits(ElementTy) / 8;
+      if (ElementTy->isFloatTy()) {
+        Out << "F" << ElementCnt * ElementSizePerBytes;
+        if (Alignment.value() >= 8 && !T->isPointerTy())
+          Out << "a" << Alignment.value();
+        if (ArgSizeBytes & (ArgSizeBytes - 1))
+          CanonicalizedTy = T->getPointerTo();
+        return CanonicalizedTy;
+      } else if (ElementTy->isDoubleTy()) {
+        Out << "D" << ElementCnt * ElementSizePerBytes;
+        if (Alignment.value() >= 8 && !T->isPointerTy())
+          Out << "a" << Alignment.value();
+        if (ArgSizeBytes & (ArgSizeBytes - 1))
+          CanonicalizedTy = T->getPointerTo();
+        return CanonicalizedTy;
+      }
+    }
+
+    unsigned TypeSize = ArgSizeBytes;
+    if (TypeSize == 0)
+      TypeSize = DL.getTypeSizeInBits(T) / 8;
+    if (!Ret && !EntryThunk && TypeSize > 16) {
+      Out << "i8";
+      CanonicalizedTy = I8PtrTy;
+    } else if (ArgSizeBytes || T->isArrayTy() || T->isStructTy()) {
+      Out << "m";
+      if (TypeSize != 4)
+        Out << TypeSize;
+      if (Alignment.value() >= 8 && !T->isPointerTy())
+        Out << "a" << Alignment.value();
+    } else {
+      Out << "i8";
+      CanonicalizedTy = I64Ty;
     }
   }
-  FunctionType *Ty = FunctionType::get(RetTy, DefArgTypes, false);
+  return CanonicalizedTy;
+}
+
+Function *AArch64Arm64ECCallLowering::buildExitThunk(CallBase *CB) {
+  FunctionType *FT = CB->getFunctionType();
+  bool IsVarArg = FT->isVarArg();
+
+  SmallString<256> ExitThunkName;
+  llvm::raw_svector_ostream Out(ExitThunkName);
+  FunctionType *Ty =
+      getThunkType(FT, CB->getAttributes(), /*EntryThunk*/ false, Out);
   Function *F =
-      Function::Create(Ty, GlobalValue::InternalLinkage, 0, "thunk", M);
+      Function::Create(Ty, GlobalValue::InternalLinkage, 0, ExitThunkName, M);
   F->setCallingConv(CallingConv::ARM64EC_Thunk_Native);
   // Copy MSVC, and always set up a frame pointer. (Maybe this isn't necessary.)
   F->addFnAttr("frame-pointer", "all");
@@ -123,6 +260,7 @@ Function *AArch64Arm64ECCallLowering::buildExitThunk(CallBase *CB) {
   Args.push_back(F->arg_begin());
   ArgTypes.push_back(Args.back()->getType());
 
+  Type *RetTy = Ty->getReturnType();
   Type *X64RetType = RetTy;
   if (RetTy->isArrayTy() || RetTy->isStructTy()) {
     // If the return type is an array or struct, translate it. Values of size
@@ -242,8 +380,11 @@ bool AArch64Arm64ECCallLowering::doInitialization(Module &Mod) {
           mdconst::extract_or_null<ConstantInt>(M->getModuleFlag("cfguard")))
     cfguard_module_flag = MD->getZExtValue();
 
-  Type *Int8Ptr = Type::getInt8PtrTy(M->getContext());
-  GuardFnType = FunctionType::get(Int8Ptr, {Int8Ptr, Int8Ptr}, false);
+  I8PtrTy = Type::getInt8PtrTy(M->getContext());
+  I64Ty = Type::getInt64Ty(M->getContext());
+  VoidTy = Type::getVoidTy(M->getContext());
+
+  GuardFnType = FunctionType::get(I8PtrTy, {I8PtrTy, I8PtrTy}, false);
   GuardFnPtrType = PointerType::get(GuardFnType, 0);
   GuardFnCFGlobal =
       M->getOrInsertGlobal("__os_arm64x_check_icall_cfg", GuardFnPtrType);
