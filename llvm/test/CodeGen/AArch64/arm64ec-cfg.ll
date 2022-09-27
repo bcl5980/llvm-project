@@ -279,6 +279,45 @@ entry:
 ; CHECK-NEXT:    .seh_endfunclet
 ; CHECK-NEXT:    .seh_endproc
 ;
+; CHECK-LABEL: $ientry_thunk$cdecl$v$i8:
+; CHECK:       .seh_proc $ientry_thunk$cdecl$v$i8
+; CHECK-NEXT:  // %bb.0:
+; CHECK-NEXT:    stp x29, x30, [sp, #-176]! // 16-byte Folded Spill
+; CHECK-NEXT:    .seh_save_fplr_x 176
+; CHECK-NEXT:    stp q6, q7, [sp, #16] // 32-byte Folded Spill
+; CHECK-NEXT:    .seh_save_qregp q6, 16
+; CHECK-NEXT:    stp q8, q9, [sp, #48] // 32-byte Folded Spill
+; CHECK-NEXT:    .seh_save_qregp q8, 48
+; CHECK-NEXT:    stp q10, q11, [sp, #80] // 32-byte Folded Spill
+; CHECK-NEXT:    .seh_save_qregp q10, 80
+; CHECK-NEXT:    stp q12, q13, [sp, #112] // 32-byte Folded Spill
+; CHECK-NEXT:    .seh_save_qregp q12, 112
+; CHECK-NEXT:    stp q14, q15, [sp, #144] // 32-byte Folded Spill
+; CHECK-NEXT:    .seh_save_qregp q14, 144
+; CHECK-NEXT:    mov x29, sp
+; CHECK-NEXT:    .seh_set_fp
+; CHECK-NEXT:    .seh_endprologue
+; CHECK-NEXT:    blr x9
+; CHECK-NEXT:    //APP
+; CHECK-NEXT:    //NO_APP
+; CHECK-NEXT:    .seh_startepilogue
+; CHECK-NEXT:    ldp q14, q15, [sp, #144] // 32-byte Folded Reload
+; CHECK-NEXT:    .seh_save_qregp q14, 144
+; CHECK-NEXT:    ldp q12, q13, [sp, #112] // 32-byte Folded Reload
+; CHECK-NEXT:    .seh_save_qregp q12, 112
+; CHECK-NEXT:    ldp q10, q11, [sp, #80] // 32-byte Folded Reload
+; CHECK-NEXT:    .seh_save_qregp q10, 80
+; CHECK-NEXT:    ldp q8, q9, [sp, #48] // 32-byte Folded Reload
+; CHECK-NEXT:    .seh_save_qregp q8, 48
+; CHECK-NEXT:    ldp q6, q7, [sp, #16] // 32-byte Folded Reload
+; CHECK-NEXT:    .seh_save_qregp q6, 16
+; CHECK-NEXT:    ldp x29, x30, [sp], #176 // 16-byte Folded Reload
+; CHECK-NEXT:    .seh_save_fplr_x 176
+; CHECK-NEXT:    .seh_endepilogue
+; CHECK-NEXT:    ret
+; CHECK-NEXT:    .seh_endfunclet
+; CHECK-NEXT:    .seh_endproc
+;
 ; CHECK-LABEL: $iexit_thunk$cdecl$v$v:
 ; CHECK:       .seh_proc $iexit_thunk$cdecl$v$v
 ; CHECK-NEXT:  // %bb.0:
@@ -348,6 +387,45 @@ entry:
 ; CHECK-NEXT:    .seh_save_fplr 48
 ; CHECK-NEXT:    add sp, sp, #64
 ; CHECK-NEXT:    .seh_stackalloc 64
+; CHECK-NEXT:    .seh_endepilogue
+; CHECK-NEXT:    ret
+; CHECK-NEXT:    .seh_endfunclet
+; CHECK-NEXT:    .seh_endproc
+;
+; CHECK-LABEL: $ientry_thunk$cdecl$m16$i8:
+; CHECK:       .seh_proc $ientry_thunk$cdecl$m16$i8
+; CHECK-NEXT:  // %bb.0:
+; CHECK-NEXT:    stp x29, x30, [sp, #-176]! // 16-byte Folded Spill
+; CHECK-NEXT:    .seh_save_fplr_x 176
+; CHECK-NEXT:    stp q6, q7, [sp, #16] // 32-byte Folded Spill
+; CHECK-NEXT:    .seh_save_qregp q6, 16
+; CHECK-NEXT:    stp q8, q9, [sp, #48] // 32-byte Folded Spill
+; CHECK-NEXT:    .seh_save_qregp q8, 48
+; CHECK-NEXT:    stp q10, q11, [sp, #80] // 32-byte Folded Spill
+; CHECK-NEXT:    .seh_save_qregp q10, 80
+; CHECK-NEXT:    stp q12, q13, [sp, #112] // 32-byte Folded Spill
+; CHECK-NEXT:    .seh_save_qregp q12, 112
+; CHECK-NEXT:    stp q14, q15, [sp, #144] // 32-byte Folded Spill
+; CHECK-NEXT:    .seh_save_qregp q14, 144
+; CHECK-NEXT:    mov x29, sp
+; CHECK-NEXT:    .seh_set_fp
+; CHECK-NEXT:    .seh_endprologue
+; CHECK-NEXT:    blr x9
+; CHECK-NEXT:    //APP
+; CHECK-NEXT:    //NO_APP
+; CHECK-NEXT:    .seh_startepilogue
+; CHECK-NEXT:    ldp q14, q15, [sp, #144] // 32-byte Folded Reload
+; CHECK-NEXT:    .seh_save_qregp q14, 144
+; CHECK-NEXT:    ldp q12, q13, [sp, #112] // 32-byte Folded Reload
+; CHECK-NEXT:    .seh_save_qregp q12, 112
+; CHECK-NEXT:    ldp q10, q11, [sp, #80] // 32-byte Folded Reload
+; CHECK-NEXT:    .seh_save_qregp q10, 80
+; CHECK-NEXT:    ldp q8, q9, [sp, #48] // 32-byte Folded Reload
+; CHECK-NEXT:    .seh_save_qregp q8, 48
+; CHECK-NEXT:    ldp q6, q7, [sp, #16] // 32-byte Folded Reload
+; CHECK-NEXT:    .seh_save_qregp q6, 16
+; CHECK-NEXT:    ldp x29, x30, [sp], #176 // 16-byte Folded Reload
+; CHECK-NEXT:    .seh_save_fplr_x 176
 ; CHECK-NEXT:    .seh_endepilogue
 ; CHECK-NEXT:    ret
 ; CHECK-NEXT:    .seh_endfunclet
@@ -433,6 +511,46 @@ entry:
 ; CHECK-NEXT:    .seh_save_regp x21, 16
 ; CHECK-NEXT:    ldp x19, x20, [sp], #64 // 16-byte Folded Reload
 ; CHECK-NEXT:    .seh_save_regp_x x19, 64
+; CHECK-NEXT:    .seh_endepilogue
+; CHECK-NEXT:    ret
+; CHECK-NEXT:    .seh_endfunclet
+; CHECK-NEXT:    .seh_endproc
+;
+; CHECK-LABEL: $ientry_thunk$cdecl$i8$i8:
+; CHECK:       .seh_proc $ientry_thunk$cdecl$i8$i8
+; CHECK-NEXT:  // %bb.0:
+; CHECK-NEXT:    stp x29, x30, [sp, #-176]! // 16-byte Folded Spill
+; CHECK-NEXT:    .seh_save_fplr_x 176
+; CHECK-NEXT:    stp q6, q7, [sp, #16] // 32-byte Folded Spill
+; CHECK-NEXT:    .seh_save_qregp q6, 16
+; CHECK-NEXT:    stp q8, q9, [sp, #48] // 32-byte Folded Spill
+; CHECK-NEXT:    .seh_save_qregp q8, 48
+; CHECK-NEXT:    stp q10, q11, [sp, #80] // 32-byte Folded Spill
+; CHECK-NEXT:    .seh_save_qregp q10, 80
+; CHECK-NEXT:    stp q12, q13, [sp, #112] // 32-byte Folded Spill
+; CHECK-NEXT:    .seh_save_qregp q12, 112
+; CHECK-NEXT:    stp q14, q15, [sp, #144] // 32-byte Folded Spill
+; CHECK-NEXT:    .seh_save_qregp q14, 144
+; CHECK-NEXT:    mov x29, sp
+; CHECK-NEXT:    .seh_set_fp
+; CHECK-NEXT:    .seh_endprologue
+; CHECK-NEXT:    blr x9
+; CHECK-NEXT:    mov x8, x0
+; CHECK-NEXT:    //APP
+; CHECK-NEXT:    //NO_APP
+; CHECK-NEXT:    .seh_startepilogue
+; CHECK-NEXT:    ldp q14, q15, [sp, #144] // 32-byte Folded Reload
+; CHECK-NEXT:    .seh_save_qregp q14, 144
+; CHECK-NEXT:    ldp q12, q13, [sp, #112] // 32-byte Folded Reload
+; CHECK-NEXT:    .seh_save_qregp q12, 112
+; CHECK-NEXT:    ldp q10, q11, [sp, #80] // 32-byte Folded Reload
+; CHECK-NEXT:    .seh_save_qregp q10, 80
+; CHECK-NEXT:    ldp q8, q9, [sp, #48] // 32-byte Folded Reload
+; CHECK-NEXT:    .seh_save_qregp q8, 48
+; CHECK-NEXT:    ldp q6, q7, [sp, #16] // 32-byte Folded Reload
+; CHECK-NEXT:    .seh_save_qregp q6, 16
+; CHECK-NEXT:    ldp x29, x30, [sp], #176 // 16-byte Folded Reload
+; CHECK-NEXT:    .seh_save_fplr_x 176
 ; CHECK-NEXT:    .seh_endepilogue
 ; CHECK-NEXT:    ret
 ; CHECK-NEXT:    .seh_endfunclet
@@ -549,6 +667,53 @@ entry:
 ; CHECK-NEXT:    .seh_save_regp x21, 16
 ; CHECK-NEXT:    ldp x19, x20, [sp], #64 // 16-byte Folded Reload
 ; CHECK-NEXT:    .seh_save_regp_x x19, 64
+; CHECK-NEXT:    .seh_endepilogue
+; CHECK-NEXT:    ret
+; CHECK-NEXT:    .seh_endfunclet
+; CHECK-NEXT:    .seh_endproc
+;
+; CHECK-LABEL: $ientry_thunk$cdecl$m17$i8:
+; CHECK:       .seh_proc $ientry_thunk$cdecl$m17$i8
+; CHECK-NEXT:  // %bb.0:
+; CHECK-NEXT:    str x19, [sp, #-192]! // 8-byte Folded Spill
+; CHECK-NEXT:    .seh_save_reg_x x19, 192
+; CHECK-NEXT:    stp x29, x30, [sp, #16] // 16-byte Folded Spill
+; CHECK-NEXT:    .seh_save_fplr 16
+; CHECK-NEXT:    stp q6, q7, [sp, #32] // 32-byte Folded Spill
+; CHECK-NEXT:    .seh_save_qregp q6, 32
+; CHECK-NEXT:    stp q8, q9, [sp, #64] // 32-byte Folded Spill
+; CHECK-NEXT:    .seh_save_qregp q8, 64
+; CHECK-NEXT:    stp q10, q11, [sp, #96] // 32-byte Folded Spill
+; CHECK-NEXT:    .seh_save_qregp q10, 96
+; CHECK-NEXT:    stp q12, q13, [sp, #128] // 32-byte Folded Spill
+; CHECK-NEXT:    .seh_save_qregp q12, 128
+; CHECK-NEXT:    stp q14, q15, [sp, #160] // 32-byte Folded Spill
+; CHECK-NEXT:    .seh_save_qregp q14, 160
+; CHECK-NEXT:    add x29, sp, #16
+; CHECK-NEXT:    .seh_add_fp 16
+; CHECK-NEXT:    .seh_endprologue
+; CHECK-NEXT:    mov x19, x0
+; CHECK-NEXT:    mov x8, x0
+; CHECK-NEXT:    mov x0, x1
+; CHECK-NEXT:    blr x9
+; CHECK-NEXT:    mov x8, x19
+; CHECK-NEXT:    //APP
+; CHECK-NEXT:    //NO_APP
+; CHECK-NEXT:    .seh_startepilogue
+; CHECK-NEXT:    ldp q14, q15, [sp, #160] // 32-byte Folded Reload
+; CHECK-NEXT:    .seh_save_qregp q14, 160
+; CHECK-NEXT:    ldp q12, q13, [sp, #128] // 32-byte Folded Reload
+; CHECK-NEXT:    .seh_save_qregp q12, 128
+; CHECK-NEXT:    ldp q10, q11, [sp, #96] // 32-byte Folded Reload
+; CHECK-NEXT:    .seh_save_qregp q10, 96
+; CHECK-NEXT:    ldp q8, q9, [sp, #64] // 32-byte Folded Reload
+; CHECK-NEXT:    .seh_save_qregp q8, 64
+; CHECK-NEXT:    ldp q6, q7, [sp, #32] // 32-byte Folded Reload
+; CHECK-NEXT:    .seh_save_qregp q6, 32
+; CHECK-NEXT:    ldp x29, x30, [sp, #16] // 16-byte Folded Reload
+; CHECK-NEXT:    .seh_save_fplr 16
+; CHECK-NEXT:    ldr x19, [sp], #192 // 8-byte Folded Reload
+; CHECK-NEXT:    .seh_save_reg_x x19, 192
 ; CHECK-NEXT:    .seh_endepilogue
 ; CHECK-NEXT:    ret
 ; CHECK-NEXT:    .seh_endfunclet

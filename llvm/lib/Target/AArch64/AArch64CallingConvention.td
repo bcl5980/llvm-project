@@ -544,6 +544,11 @@ def CSR_Win_AArch64_AAPCS : CalleeSavedRegs<(add X19, X20, X21, X22, X23, X24,
                                                D8, D9, D10, D11,
                                                D12, D13, D14, D15)>;
 
+// ARM64EC thunk x64 v0-v5 is volitle, v6,7 is also non-volatile
+def CSR_AArch64_Arm64EC_Thunk : CalleeSavedRegs<(add X19, X20, X21, X22, X23, X24,
+                                                 X25, X26, X27, X28, FP, LR,
+                                                 (sequence "Q%u", 6, 15))>;
+
 // The Control Flow Guard check call uses a custom calling convention that also
 // preserves X0-X8 and Q0-Q7.
 def CSR_Win_AArch64_CFGuard_Check : CalleeSavedRegs<(add CSR_Win_AArch64_AAPCS,

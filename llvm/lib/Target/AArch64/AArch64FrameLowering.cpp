@@ -2677,7 +2677,8 @@ static void computeCalleeSaveRegisterPairs(
 
     // Round up size of non-pair to pair size if we need to pad the
     // callee-save area to ensure 16-byte alignment.
-    if (NeedGapToAlignStack && !NeedsWinCFI &&
+    if (NeedGapToAlignStack &&
+        (!NeedsWinCFI || CC == CallingConv::ARM64EC_Thunk_X64) &&
         !RPI.isScalable() && RPI.Type != RegPairInfo::FPR128 &&
         !RPI.isPaired() && ByteOffset % 16 != 0) {
       ByteOffset += 8 * StackFillDir;

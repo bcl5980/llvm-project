@@ -22,6 +22,7 @@
 #include "llvm/IR/CallingConv.h"
 #include "llvm/IR/GlobalVariable.h"
 #include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/InlineAsm.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/InitializePasses.h"
 #include "llvm/Pass.h"
@@ -47,10 +48,6 @@ public:
 
   StringRef getPassName() const override { return ARM64EC_CALL_LOWERING_NAME; }
 
-  Function *buildExitThunk(CallBase *CB);
-  void lowerCall(CallBase *CB);
-  bool genExitThunk(Function &F);
-  bool genEntryThunk(Function &F);
   bool runOnModule(Module &Mod) override;
 
   // TODO: find the other types
@@ -86,6 +83,15 @@ private:
                               bool Ret, uint64_t ArgSizeBytes,
                               raw_ostream &Out);
   void addHybridInfo(Function *From, Function *To, HybridInfoType InfoType);
+
+  Function *buildEntryThunk(Function *F);
+  Function *buildExitThunk(CallBase *CB);
+  void lowerCall(CallBase *CB);
+  bool genExitThunk(Function &F);
+  bool genEntryThunk(Function &F);
+
+  static bool passByRefInX86(unsigned ArgSize);
+  static bool isSRetInX86(unsigned ArgSize);
 };
 
 } // end anonymous namespace
@@ -94,16 +100,38 @@ char AArch64Arm64ECCallLowering::ID = 0;
 INITIALIZE_PASS(AArch64Arm64ECCallLowering, DEBUG_TYPE,
                 ARM64EC_CALL_LOWERING_NAME, false, false)
 
+bool AArch64Arm64ECCallLowering::passByRefInX86(unsigned ArgSize) {
+  if (ArgSize > 16)
+    return false;
+
+  return (ArgSize & (ArgSize - 1)) != 0;
+}
+
+bool AArch64Arm64ECCallLowering::isSRetInX86(unsigned ArgSize) {
+  return ArgSize > 8 && ArgSize <= 16;
+}
+
 FunctionType *AArch64Arm64ECCallLowering::getThunkType(FunctionType *FT,
                                                        AttributeList AttrList,
                                                        bool EntryThunk,
                                                        raw_ostream &Out) {
   Out << (EntryThunk ? "$ientry_thunk$cdecl$" : "$iexit_thunk$cdecl$");
 
-  Type *RetTy = getThunkRetType(FT, AttrList, EntryThunk, Out);
-
   SmallVector<Type *> DefArgTypes;
   DefArgTypes.push_back(I8PtrTy);
+  Type *RetTy = getThunkRetType(FT, AttrList, EntryThunk, Out);
+
+  unsigned RetArgSize = AttrList.getRetArm64ECArgSizeBytes();
+  if (RetArgSize == 0 && !RetTy->isVoidTy())
+    RetArgSize = M->getDataLayout().getTypeSizeInBits(RetTy) / 8;
+  if (EntryThunk && isSRetInX86(RetArgSize)) {
+    // x86 signature will return value from stack when ret type
+    // size is larger than 8 and less than 16. But arm64
+    // signature is still passed by register here.
+    RetTy = VoidTy;
+    DefArgTypes.push_back(I8PtrTy);
+  }
+
   getThunkArgTypes(FT, AttrList, EntryThunk, DefArgTypes, Out);
 
   return FunctionType::get(RetTy, DefArgTypes, false);
@@ -235,6 +263,9 @@ Type *AArch64Arm64ECCallLowering::canonicalizeThunkType(
         Out << TypeSize;
       if (Alignment.value() >= 8 && !T->isPointerTy())
         Out << "a" << Alignment.value();
+
+      if (EntryThunk && passByRefInX86(TypeSize))
+        CanonicalizedTy = I8PtrTy;
     } else {
       Out << "i8";
       CanonicalizedTy = I64Ty;
@@ -245,10 +276,125 @@ Type *AArch64Arm64ECCallLowering::canonicalizeThunkType(
 
 void AArch64Arm64ECCallLowering::addHybridInfo(Function *From, Function *To,
                                                HybridInfoType InfoType) {
+  Type *I8PtrTy = Type::getInt8PtrTy(M->getContext());
+
+  // FIXME: do we really need to consider non-opaque pointer mode?
   Constant *HybridInfo[3] = {
-      From, To, ConstantInt::get(Type::getInt32Ty(M->getContext()), InfoType)};
+      ConstantExpr::getBitCast(From, I8PtrTy),
+      ConstantExpr::getBitCast(To, I8PtrTy),
+      ConstantInt::get(Type::getInt32Ty(M->getContext()), InfoType)};
+
   HybridInfoTable.push_back(
       ConstantStruct::get(HybridInfoStructType, HybridInfo));
+}
+
+Function *AArch64Arm64ECCallLowering::buildEntryThunk(Function *F) {
+  FunctionType *OrignFTy = F->getFunctionType();
+  SmallString<256> EntryThunkName;
+  llvm::raw_svector_ostream Out(EntryThunkName);
+  FunctionType *ThunkTy =
+      getThunkType(OrignFTy, F->getAttributes(), /*EntryThunk*/ true, Out);
+  Function *Thunk = M->getFunction(EntryThunkName);
+  if (Thunk)
+    return Thunk;
+
+  auto &DL = M->getDataLayout();
+  Thunk = Function::Create(ThunkTy, GlobalValue::ExternalLinkage, 0,
+                           EntryThunkName, M);
+  Thunk->setCallingConv(CallingConv::ARM64EC_Thunk_X64);
+  Thunk->addFnAttr("frame-pointer", "all");
+  Thunk->setSection(".wowthk$aa");
+  Thunk->setLinkage(GlobalValue::LinkOnceODRLinkage);
+  Thunk->setComdat(M->getOrInsertComdat(EntryThunkName));
+
+  unsigned ArgDelta = 1;
+  Type *X64RetType = ThunkTy->getReturnType();
+  Type *RetTy = X64RetType;
+  unsigned RetArgSize = F->getAttributes().getRetArm64ECArgSizeBytes();
+  Attribute SRetAttr;
+  if (X64RetType->isVoidTy()) {
+    if (isSRetInX86(RetArgSize)) {
+      // if the return value size is larger than 8 and less than 16
+      // the thunk should be x86 signature with struct ret
+      ArgDelta++;
+      RetTy = Type::getIntNTy(M->getContext(), RetArgSize * 8);
+      SRetAttr = Attribute::getWithStructRetType(M->getContext(), RetTy);
+      Thunk->addParamAttr(1, SRetAttr);
+    } else if (F->arg_size() > 0) {
+      // if the function already has struct ret,
+      // change the struct type to equivalent intN type.
+      SRetAttr = F->getParamAttribute(0, Attribute::StructRet);
+      if (SRetAttr.isValid()) {
+        unsigned RetArgSizeInBits = F->getParamArm64ECArgSizeBytes(0) * 8;
+        if (RetArgSizeInBits == 0)
+          RetArgSizeInBits = DL.getTypeSizeInBits(SRetAttr.getValueAsType());
+        SRetAttr = Attribute::getWithStructRetType(
+            M->getContext(),
+            Type::getIntNTy(M->getContext(), RetArgSizeInBits));
+        Thunk->addParamAttr(1, SRetAttr);
+      }
+    }
+  }
+
+  BasicBlock *BB = BasicBlock::Create(M->getContext(), "", Thunk);
+  IRBuilder<> IRB(BB);
+  SmallVector<Value *> Args;
+  SmallVector<Type *> ArgTypes;
+
+  for (unsigned i = 0; i < F->arg_size(); ++i) {
+    Argument *Arg = Thunk->getArg(i + ArgDelta);
+    unsigned ArgSize = F->getParamArm64ECArgSizeBytes(i);
+    if (passByRefInX86(ArgSize)) {
+      bool FloatCase = false;
+      Type *FArgTy = F->getArg(i)->getType();
+      if (FArgTy->isArrayTy()) {
+        Type *ElementTy = FArgTy->getArrayElementType();
+        if (ElementTy->isFloatTy() || ElementTy->isDoubleTy()) {
+          Value *LoadData = IRB.CreateLoad(FArgTy, Arg);
+          Args.push_back(LoadData);
+          FloatCase = true;
+        }
+      }
+      if (!FloatCase) {
+        unsigned NativeArgSize = DL.getTypeSizeInBits(FArgTy);
+        Type *NativeType = Type::getIntNTy(M->getContext(), NativeArgSize);
+        Type *LoadType = Type::getIntNTy(M->getContext(), ArgSize * 8);
+        Value *BitCast = IRB.CreateBitCast(Arg, LoadType->getPointerTo());
+        Value *LoadData = IRB.CreateLoad(LoadType, BitCast);
+        Args.push_back(IRB.CreateZExt(LoadData, NativeType));
+      }
+    } else {
+      Args.push_back(Arg);
+    }
+    ArgTypes.push_back(Args.back()->getType());
+  }
+
+  auto *CallTy = FunctionType::get(RetTy, ArgTypes, F->isVarArg());
+
+  Value *Callee =
+      IRB.CreateBitCast(Thunk->arg_begin(), CallTy->getPointerTo(0));
+  CallInst *Call = IRB.CreateCall(CallTy, Callee, Args);
+  Call->setCallingConv(F->getCallingConv());
+  if (F->hasParamAttribute(0, Attribute::StructRet))
+    Call->addParamAttr(0, SRetAttr);
+
+  FunctionType *FVoidVoidTy = FunctionType::get(VoidTy, false);
+
+  InlineAsm *IA = InlineAsm::get(
+      FVoidVoidTy, "",
+      "~{v6},~{v7},~{v8},~{v9},~{v10},~{v11},~{v12},~{v13},~{v14},~{v15}",
+      /*hasSideEffects=*/true);
+  IRB.CreateCall(IA, None);
+
+  if (ArgDelta == 2)
+    IRB.CreateStore(Call, Thunk->getArg(1));
+
+  if (X64RetType->isVoidTy())
+    IRB.CreateRetVoid();
+  else
+    IRB.CreateRet(Call);
+
+  return Thunk;
 }
 
 Function *AArch64Arm64ECCallLowering::buildExitThunk(CallBase *CB) {
@@ -407,7 +553,12 @@ void AArch64Arm64ECCallLowering::lowerCall(CallBase *CB) {
 }
 
 bool AArch64Arm64ECCallLowering::genEntryThunk(Function &F) {
-  // TODO here
+  if (!F.hasExactDefinition())
+    return false;
+
+  Function *Thunk = buildEntryThunk(&F);
+  addHybridInfo(&F, Thunk, Native_To_Entrythunk);
+
   return false;
 }
 
@@ -477,8 +628,10 @@ bool AArch64Arm64ECCallLowering::runOnModule(Module &Mod) {
   HybridInfoTable.clear();
 
   for (auto &F : M->getFunctionList()) {
-    genEntryThunk(F);
-    genExitThunk(F);
+    if (F.getSection() != ".wowthk$aa") {
+      genEntryThunk(F);
+      genExitThunk(F);
+    }
   }
 
   if (HybridInfoTable.size()) {

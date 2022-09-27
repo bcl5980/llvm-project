@@ -85,6 +85,8 @@ AArch64RegisterInfo::getCalleeSavedRegs(const MachineFunction *MF) const {
 
   if (MF->getFunction().getCallingConv() == CallingConv::CFGuard_Check)
     return CSR_Win_AArch64_CFGuard_Check_SaveList;
+  if (MF->getFunction().getCallingConv() == CallingConv::ARM64EC_Thunk_X64)
+    return CSR_AArch64_Arm64EC_Thunk_SaveList;
   if (MF->getSubtarget<AArch64Subtarget>().isTargetWindows())
     return CSR_Win_AArch64_AAPCS_SaveList;
   if (MF->getFunction().getCallingConv() == CallingConv::AArch64_VectorCall)
