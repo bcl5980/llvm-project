@@ -4266,6 +4266,7 @@ let isPseudo = 1 in {
   def SEH_SaveFReg_X :  Pseudo<(outs), (ins i32imm:$reg, i32imm:$offs), []>, Sched<[]>;
   def SEH_SaveFRegP : Pseudo<(outs), (ins i32imm:$reg0, i32imm:$reg1, i32imm:$offs), []>, Sched<[]>;
   def SEH_SaveFRegP_X : Pseudo<(outs), (ins i32imm:$reg0, i32imm:$reg1, i32imm:$offs), []>, Sched<[]>;
+  def SEH_SaveQRegP : Pseudo<(outs), (ins i32imm:$reg0, i32imm:$reg1, i32imm:$offs), []>, Sched<[]>;
   def SEH_SetFP : Pseudo<(outs), (ins), []>, Sched<[]>;
   def SEH_AddFP : Pseudo<(outs), (ins i32imm:$offs), []>, Sched<[]>;
   def SEH_Nop : Pseudo<(outs), (ins), []>, Sched<[]>;

@@ -1089,6 +1089,14 @@ static MachineBasicBlock::iterator InsertSEH(MachineBasicBlock::iterator MBBI,
               .setMIFlag(Flag);
     break;
   }
+  case AArch64::STPQi:
+  case AArch64::LDPQi:
+    unsigned Reg = RegInfo->getSEHRegNum(MBBI->getOperand(0).getReg());
+    MIB = BuildMI(MF, DL, TII.get(AArch64::SEH_SaveQRegP))
+              .addImm(Reg)
+              .addImm(Imm * 16)
+              .setMIFlag(Flag);
+    break;
   }
   auto I = MBB->insertAfter(MBBI, MIB);
   return I;
@@ -1107,6 +1115,7 @@ static void fixupSEHOpcode(MachineBasicBlock::iterator MBBI,
   case AArch64::SEH_SaveReg:
   case AArch64::SEH_SaveFRegP:
   case AArch64::SEH_SaveFReg:
+  case AArch64::SEH_SaveQRegP:
     ImmOpnd = &MBBI->getOperand(ImmIdx);
     break;
   }

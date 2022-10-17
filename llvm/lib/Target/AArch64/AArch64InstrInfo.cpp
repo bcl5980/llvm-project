@@ -1011,6 +1011,7 @@ bool AArch64InstrInfo::isSEHInstruction(const MachineInstr &MI) {
     case AArch64::SEH_SaveFReg_X:
     case AArch64::SEH_SaveFRegP:
     case AArch64::SEH_SaveFRegP_X:
+    case AArch64::SEH_SaveQRegP:
     case AArch64::SEH_SetFP:
     case AArch64::SEH_AddFP:
     case AArch64::SEH_Nop:

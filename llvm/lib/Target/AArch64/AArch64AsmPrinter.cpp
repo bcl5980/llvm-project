@@ -1678,6 +1678,11 @@ void AArch64AsmPrinter::emitInstruction(const MachineInstr *MI) {
                                   -MI->getOperand(2).getImm());
     return;
 
+  case AArch64::SEH_SaveQRegP:
+    TS->emitARM64WinCFISaveAnyRegQX(MI->getOperand(0).getImm(),
+                                    MI->getOperand(1).getImm());
+    return;
+
   case AArch64::SEH_SetFP:
     TS->emitARM64WinCFISetFP();
     return;
