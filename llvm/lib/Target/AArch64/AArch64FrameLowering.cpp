@@ -2248,6 +2248,25 @@ void AArch64FrameLowering::emitEpilogue(MachineFunction &MF,
         false, NeedsWinCFI, &HasWinCFI, EmitCFI,
         StackOffset::getFixed(CombineAfterCSRBump ? PrologueSaveSize : 0));
   }
+
+  // ARM64EC Entry Thunkthere is no actual return for entry thunk. We need to
+  // call __os_arm64x_dispatch_ret to return to x86 emulator.
+  if (MF.getFunction().getCallingConv() == CallingConv::ARM64EC_Thunk_X64) {
+    MachineBasicBlock::iterator MBBI = MBB.getFirstTerminator();
+    Module *M = MF.getFunction().getParent();
+    Type *VoidTy = Type::getVoidTy(M->getContext());
+    Type *FT = FunctionType::get(VoidTy, {}, false);
+    GlobalValue *GV = cast<GlobalValue>(
+        M->getOrInsertGlobal("__os_arm64x_dispatch_ret", FT->getPointerTo()));
+    BuildMI(MBB, MBBI, DL, TII->get(AArch64::ADRP), AArch64::X16)
+        .addGlobalAddress(GV, 0, AArch64II::MO_PAGE);
+    BuildMI(MBB, MBBI, DL, TII->get(AArch64::LDRXui), AArch64::X16)
+        .addReg(AArch64::X16)
+        .addGlobalAddress(GV, 0,
+                          AArch64II::MO_GOT | AArch64II::MO_PAGEOFF |
+                          AArch64II::MO_NC);
+    BuildMI(MBB, MBBI, DL, TII->get(AArch64::BR)).addReg(AArch64::X16);
+  }
 }
 
 /// getFrameIndexReference - Provide a base+offset reference to an FI slot for

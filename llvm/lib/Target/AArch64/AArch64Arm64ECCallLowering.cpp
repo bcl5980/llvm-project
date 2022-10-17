@@ -438,8 +438,6 @@ Function *AArch64Arm64ECCallLowering::buildEntryThunk(Function *F) {
   if (ArgDelta == 2)
     IRB.CreateStore(Call, Thunk->getArg(1));
 
-  // FIXME: there is no actual return for entry thunk. We need to call
-  // __os_arm64x_dispatch_ret to return to x86 emulator.
   if (X64RetType->isVoidTy())
     IRB.CreateRetVoid();
   else
