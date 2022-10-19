@@ -253,6 +253,7 @@ StringRef MCSymbolRefExpr::getVariantKindName(VariantKind Kind) {
   case VK_SECREL: return "SECREL32";
   case VK_SIZE: return "SIZE";
   case VK_WEAKREF: return "WEAKREF";
+  case VK_ANTIDEPENDENCY: return "ANTI_DEPENDENCY";
   case VK_X86_ABS8: return "ABS8";
   case VK_X86_PLTOFF: return "PLTOFF";
   case VK_ARM_NONE: return "none";
@@ -524,6 +525,7 @@ MCSymbolRefExpr::getVariantKindForName(StringRef Name) {
     .Case("tls_gd_lo", VK_VE_TLS_GD_LO32)
     .Case("tpoff_hi", VK_VE_TPOFF_HI32)
     .Case("tpoff_lo", VK_VE_TPOFF_LO32)
+    .Case("anti_dependency", VK_ANTIDEPENDENCY)
     .Default(VK_Invalid);
 }
 
@@ -764,7 +766,8 @@ static bool canExpand(const MCSymbol &Sym, bool InSet) {
   const MCExpr *Expr = Sym.getVariableValue();
   const auto *Inner = dyn_cast<MCSymbolRefExpr>(Expr);
   if (Inner) {
-    if (Inner->getKind() == MCSymbolRefExpr::VK_WEAKREF)
+    if (Inner->getKind() == MCSymbolRefExpr::VK_WEAKREF ||
+        Inner->getKind() == MCSymbolRefExpr::VK_ANTIDEPENDENCY)
       return false;
   }
 
@@ -796,6 +799,7 @@ bool MCExpr::evaluateAsRelocatableImpl(MCValue &Res, const MCAssembler *Asm,
 
     // Evaluate recursively if this is a variable.
     if (Sym.isVariable() && (Kind == MCSymbolRefExpr::VK_None || Layout) &&
+        Kind != MCSymbolRefExpr::VK_ANTIDEPENDENCY &&
         canExpand(Sym, InSet)) {
       bool IsMachO = SRE->hasSubsectionsViaSymbols();
       if (Sym.getVariableValue()->evaluateAsRelocatableImpl(
@@ -995,6 +999,8 @@ MCFragment *MCExpr::findAssociatedFragment() const {
 
   case SymbolRef: {
     const MCSymbolRefExpr *SRE = cast<MCSymbolRefExpr>(this);
+    if (SRE->getKind() == MCSymbolRefExpr::VK_ANTIDEPENDENCY)
+      return nullptr;
     const MCSymbol &Sym = SRE->getSymbol();
     return Sym.getFragment();
   }

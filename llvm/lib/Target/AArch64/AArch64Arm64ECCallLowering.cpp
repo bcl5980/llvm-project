@@ -65,6 +65,7 @@ private:
   Constant *GuardFnCFGlobal = nullptr;
   Constant *GuardFnGlobal = nullptr;
   Module *M = nullptr;
+  SmallDenseMap<Function*, GlobalAlias*> DllImportFunctionMap;
 
   using HybridType = std::tuple<GlobalValue *, GlobalValue *, HybridInfoType>;
 
@@ -564,14 +565,34 @@ Function *AArch64Arm64ECCallLowering::buildExitThunk(CallBase *CB) {
 }
 
 void AArch64Arm64ECCallLowering::lowerDirectCall(CallBase *CB, Function *F) {
+  std::string FuncName = F->getName().str();
+  std::string Arm64SignName = toArm64ECMangle(FuncName);
+
   if (F->hasDLLImportStorageClass()) {
-    Function *Thunk = buildExitThunk(CB);
-    addHybridInfo(F, Thunk, Native_To_Icall_Thunk);
+    GlobalAlias *NativeAlias;
+    auto Alias = DllImportFunctionMap.find(F);
+    if (Alias == DllImportFunctionMap.end()) {
+      F->setName("__imp_" + FuncName);
+      auto *X86Alias = GlobalAlias::create(FuncName, F);
+      X86Alias->setLinkage(GlobalValue::WeakODRLinkage);
+      X86Alias->setIsAntiDependency(true);
+      NativeAlias = GlobalAlias::create(Arm64SignName, X86Alias);
+      NativeAlias->setLinkage(GlobalValue::WeakODRLinkage);
+      NativeAlias->setIsAntiDependency(true);
+      X86Alias->setAliasee(NativeAlias);
+
+      Function *Thunk = buildExitThunk(CB);
+      addHybridInfo(X86Alias, Thunk, Native_To_Icall_Thunk);
+      addHybridInfo(F, Thunk, Native_To_Icall_Thunk);
+      DllImportFunctionMap[F] = NativeAlias;
+    } else {
+      NativeAlias = Alias->second;
+    }
+
+    CB->setCalledOperand(NativeAlias);
     return;
   }
 
-  std::string FuncName = F->getName().str();
-  std::string Arm64SignName = toArm64ECMangle(FuncName);
   std::string CallThunkName = Arm64SignName;
   if (CallThunkName._Starts_with("#"))
     CallThunkName = CallThunkName + "$exit_thunk";

@@ -358,6 +358,7 @@ bool MCMachOStreamer::emitSymbolAttribute(MCSymbol *Sym,
   case MCSA_Local:
   case MCSA_LGlobal:
   case MCSA_Exported:
+  case MCSA_WeakAntiDependency:
     return false;
 
   case MCSA_Global:

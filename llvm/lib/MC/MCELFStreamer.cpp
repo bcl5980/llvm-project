@@ -300,6 +300,9 @@ bool MCELFStreamer::emitSymbolAttribute(MCSymbol *S, MCSymbolAttr Attribute) {
 
   case MCSA_LGlobal:
     llvm_unreachable("ELF doesn't support the .lglobl attribute");
+  
+  case MCSA_WeakAntiDependency:
+    llvm_unreachable("ELF doesn't support the .weak_anti_dependency attribute");
   }
 
   return true;

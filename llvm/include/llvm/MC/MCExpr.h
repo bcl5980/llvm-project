@@ -223,6 +223,7 @@ public:
     VK_SECREL,
     VK_SIZE,    // symbol@SIZE
     VK_WEAKREF, // The link between the symbols in .weakref foo, bar
+    VK_ANTIDEPENDENCY, 
 
     VK_X86_ABS8,
     VK_X86_PLTOFF,

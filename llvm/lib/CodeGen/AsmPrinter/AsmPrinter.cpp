@@ -2847,6 +2847,14 @@ const MCExpr *AsmPrinter::lowerConstant(const Constant *CV) {
   if (const ConstantInt *CI = dyn_cast<ConstantInt>(CV))
     return MCConstantExpr::create(CI->getZExtValue(), Ctx);
 
+  if (const GlobalAlias *GA = dyn_cast<GlobalAlias>(CV)) {
+    return MCSymbolRefExpr::create(getSymbol(GA),
+                                   GA->isAntiDependency()
+                                       ? MCSymbolRefExpr::VK_ANTIDEPENDENCY
+                                       : MCSymbolRefExpr::VK_None,
+                                   Ctx);
+  }
+
   if (const GlobalValue *GV = dyn_cast<GlobalValue>(CV))
     return MCSymbolRefExpr::create(getSymbol(GV), Ctx);
 

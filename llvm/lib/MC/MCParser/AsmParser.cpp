@@ -6376,6 +6376,9 @@ static bool isSymbolUsedInExpression(const MCSymbol *Sym, const MCExpr *Value) {
   case MCExpr::Constant:
     return false;
   case MCExpr::SymbolRef: {
+    if (static_cast<const MCSymbolRefExpr *>(Value)->getKind() ==
+        MCSymbolRefExpr::VK_ANTIDEPENDENCY)
+      return false;
     const MCSymbol &S =
         static_cast<const MCSymbolRefExpr *>(Value)->getSymbol();
     if (S.isVariable())

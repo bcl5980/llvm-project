@@ -820,7 +820,9 @@ void Verifier::visitAliaseeSubExpr(SmallPtrSetImpl<const GlobalAlias*> &Visited,
           &GA);
 
     if (const auto *GA2 = dyn_cast<GlobalAlias>(GV)) {
-      Check(Visited.insert(GA2).second, "Aliases cannot form a cycle", &GA);
+      Check(Visited.insert(GA2).second ||
+                !(GA2->isAntiDependency() && GA.isAntiDependency()),
+            "Aliases cannot form a cycle", &GA);
 
       Check(!GA2->isInterposable(),
             "Alias cannot point to an interposable alias", &GA);
@@ -836,9 +838,12 @@ void Verifier::visitAliaseeSubExpr(SmallPtrSetImpl<const GlobalAlias*> &Visited,
 
   for (const Use &U : C.operands()) {
     Value *V = &*U;
-    if (const auto *GA2 = dyn_cast<GlobalAlias>(V))
+    if (const auto *GA2 = dyn_cast<GlobalAlias>(V)) {
+      if (Visited.contains(GA2) && GA2->isAntiDependency() &&
+          GA.isAntiDependency())
+        return;
       visitAliaseeSubExpr(Visited, GA, *GA2->getAliasee());
-    else if (const auto *C2 = dyn_cast<Constant>(V))
+    } else if (const auto *C2 = dyn_cast<Constant>(V))
       visitAliaseeSubExpr(Visited, GA, *C2);
   }
 }
