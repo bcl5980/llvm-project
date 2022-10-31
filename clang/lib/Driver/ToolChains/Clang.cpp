@@ -7599,8 +7599,12 @@ void Clang::AddClangCLArgs(const ArgList &Args, types::ID InputType,
                            codegenoptions::DebugInfoKind *DebugInfoKind,
                            bool *EmitCodeView) const {
   bool isNVPTX = getToolChain().getTriple().isNVPTX();
+  bool isArm64EC = getToolChain().getTriple().isWindowsArm64EC();
 
   ProcessVSRuntimeLibrary(Args, CmdArgs);
+
+  if (isArm64EC)
+    CmdArgs.push_back("--dependent-lib=softintrin");
 
   if (Arg *ShowIncludes =
           Args.getLastArg(options::OPT__SLASH_showIncludes,
