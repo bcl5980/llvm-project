@@ -31,21 +31,26 @@ using OperandBundleDef = OperandBundleDefT<Value *>;
 
 #define DEBUG_TYPE "arm64eccalllowering"
 
+#define ARM64EC_CALL_LOWERING_NAME "Arm64EC call lowering"
+
 STATISTIC(Arm64ECCallsLowered, "Number of Arm64EC calls lowered");
 
 namespace {
 
-class AArch64Arm64ECCallLowering : public FunctionPass {
+class AArch64Arm64ECCallLowering : public ModulePass {
 public:
   static char ID;
-  AArch64Arm64ECCallLowering() : FunctionPass(ID) {
+  AArch64Arm64ECCallLowering() : ModulePass(ID) {
     initializeAArch64Arm64ECCallLoweringPass(*PassRegistry::getPassRegistry());
   }
 
+  StringRef getPassName() const override { return ARM64EC_CALL_LOWERING_NAME; }
+
   Function *buildExitThunk(CallBase *CB);
   void lowerCall(CallBase *CB);
-  bool doInitialization(Module &M) override;
-  bool runOnFunction(Function &F) override;
+  bool genExitThunk(Function &F);
+  bool genEntryThunk(Function &F);
+  bool runOnModule(Module &Mod) override;
 
 private:
   int cfguard_module_flag = 0;
@@ -72,6 +77,10 @@ private:
 };
 
 } // end anonymous namespace
+
+char AArch64Arm64ECCallLowering::ID = 0;
+INITIALIZE_PASS(AArch64Arm64ECCallLowering, DEBUG_TYPE,
+                ARM64EC_CALL_LOWERING_NAME, false, false)
 
 FunctionType *AArch64Arm64ECCallLowering::getThunkType(FunctionType *FT,
                                                        AttributeList AttrList,
@@ -377,28 +386,12 @@ void AArch64Arm64ECCallLowering::lowerCall(CallBase *CB) {
   CB->setCalledOperand(GuardRetVal);
 }
 
-bool AArch64Arm64ECCallLowering::doInitialization(Module &Mod) {
-  M = &Mod;
-
-  // Check if this module has the cfguard flag and read its value.
-  if (auto *MD =
-          mdconst::extract_or_null<ConstantInt>(M->getModuleFlag("cfguard")))
-    cfguard_module_flag = MD->getZExtValue();
-
-  I8PtrTy = Type::getInt8PtrTy(M->getContext());
-  I64Ty = Type::getInt64Ty(M->getContext());
-  VoidTy = Type::getVoidTy(M->getContext());
-
-  GuardFnType = FunctionType::get(I8PtrTy, {I8PtrTy, I8PtrTy}, false);
-  GuardFnPtrType = PointerType::get(GuardFnType, 0);
-  GuardFnCFGlobal =
-      M->getOrInsertGlobal("__os_arm64x_check_icall_cfg", GuardFnPtrType);
-  GuardFnGlobal =
-      M->getOrInsertGlobal("__os_arm64x_check_icall", GuardFnPtrType);
-  return true;
+bool AArch64Arm64ECCallLowering::genEntryThunk(Function &F) {
+  // TODO here
+  return false;
 }
 
-bool AArch64Arm64ECCallLowering::runOnFunction(Function &F) {
+bool AArch64Arm64ECCallLowering::genExitThunk(Function &F) {
   SmallVector<CallBase *, 8> IndirectCalls;
 
   // Iterate over the instructions to find all indirect call/invoke/callbr
@@ -434,19 +427,39 @@ bool AArch64Arm64ECCallLowering::runOnFunction(Function &F) {
     }
   }
 
-  if (IndirectCalls.empty())
-    return false;
-
   for (CallBase *CB : IndirectCalls)
     lowerCall(CB);
+
+  return IndirectCalls.size() != 0;
+}
+
+bool AArch64Arm64ECCallLowering::runOnModule(Module &Mod) {
+  M = &Mod;
+
+  // Check if this module has the cfguard flag and read its value.
+  if (auto *MD =
+          mdconst::extract_or_null<ConstantInt>(M->getModuleFlag("cfguard")))
+    cfguard_module_flag = MD->getZExtValue();
+
+  I8PtrTy = Type::getInt8PtrTy(M->getContext());
+  I64Ty = Type::getInt64Ty(M->getContext());
+  VoidTy = Type::getVoidTy(M->getContext());
+
+  GuardFnType = FunctionType::get(I8PtrTy, {I8PtrTy, I8PtrTy}, false);
+  GuardFnPtrType = PointerType::get(GuardFnType, 0);
+  GuardFnCFGlobal =
+      M->getOrInsertGlobal("__os_arm64x_check_icall_cfg", GuardFnPtrType);
+  GuardFnGlobal =
+      M->getOrInsertGlobal("__os_arm64x_check_icall", GuardFnPtrType);
+
+  for (auto &F : M->getFunctionList()) {
+    genEntryThunk(F);
+    genExitThunk(F);
+  }
 
   return true;
 }
 
-char AArch64Arm64ECCallLowering::ID = 0;
-INITIALIZE_PASS(AArch64Arm64ECCallLowering, "Arm64ECCallLowering",
-                "AArch64Arm64ECCallLowering", false, false)
-
-FunctionPass *llvm::createAArch64Arm64ECCallLoweringPass() {
+ModulePass *llvm::createAArch64Arm64ECCallLoweringPass() {
   return new AArch64Arm64ECCallLowering;
 }
