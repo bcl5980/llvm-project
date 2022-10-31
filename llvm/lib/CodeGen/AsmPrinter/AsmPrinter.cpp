@@ -689,6 +689,12 @@ void AsmPrinter::emitGlobalVariable(const GlobalVariable *GV) {
     if (emitSpecialLLVMGlobal(GV))
       return;
 
+    // emit hybmp table for arm64ec
+    if (GV->getName() == "arm64ec.hybmp") {
+      emitHybmpList(GV->getParent()->getDataLayout(), GV->getInitializer());
+      return;
+    }
+
     // Skip the emission of global equivalents. The symbol can be emitted later
     // on by emitGlobalGOTEquivs in case it turns out to be needed.
     if (GlobalGOTEquivs.count(getSymbol(GV)))

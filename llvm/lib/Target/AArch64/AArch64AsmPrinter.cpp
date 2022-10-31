@@ -47,6 +47,7 @@
 #include "llvm/MC/MCContext.h"
 #include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCInstBuilder.h"
+#include "llvm/MC/MCSectionCOFF.h"
 #include "llvm/MC/MCSectionELF.h"
 #include "llvm/MC/MCStreamer.h"
 #include "llvm/MC/MCSymbol.h"
@@ -124,6 +125,8 @@ public:
   void emitInstruction(const MachineInstr *MI) override;
 
   void emitFunctionHeaderComment() override;
+
+  void emitHybmpList(const DataLayout &DL, const Constant *List) override;
 
   void getAnalysisUsage(AnalysisUsage &AU) const override {
     AsmPrinter::getAnalysisUsage(AU);
@@ -1270,6 +1273,43 @@ void AArch64AsmPrinter::emitFMov0(const MachineInstr &MI) {
       break;
     }
     EmitToStreamer(*OutStreamer, FMov);
+  }
+}
+
+void AArch64AsmPrinter::emitHybmpList(const DataLayout &DL,
+                                      const Constant *List) {
+  if (!TM.getTargetTriple().isWindowsArm64EC())
+    return;
+
+  if (!isa<ConstantArray>(List))
+    return;
+
+  OutStreamer->switchSection(OutContext.getCOFFSection(
+      ".hybmp$x", COFF::IMAGE_SCN_LNK_INFO, SectionKind::getMetadata()));
+  // Gather the structors in a form that's convenient for sorting by
+  // priority.
+  for (Value *O : cast<ConstantArray>(List)->operands()) {
+    auto *CS = cast<ConstantStruct>(O);
+    Constant *From = CS->getOperand(0);
+    Constant *To = CS->getOperand(1);
+    Constant *ThunkType = CS->getOperand(2);
+
+    // In non-opaque ptr modem, we need to cast type.
+    // If we don't support the non-opaque ptr we can remove it
+    if (ConstantExpr *ConstExpr = dyn_cast<ConstantExpr>(From))
+      From = ConstExpr->getOperand(0);
+    if (ConstantExpr *ConstExpr = dyn_cast<ConstantExpr>(To))
+      To = ConstExpr->getOperand(0);
+
+    if (!isa<GlobalValue>(From) || !isa<GlobalValue>(To) ||
+        !isa<ConstantInt>(ThunkType))
+      continue;
+
+    MCSymbol *FromSym = getSymbol(cast<GlobalValue>(From));
+    MCSymbol *ToSym = getSymbol(cast<GlobalValue>(To));
+    OutStreamer->emitCOFFSymbolIndex(FromSym);
+    OutStreamer->emitCOFFSymbolIndex(ToSym);
+    OutStreamer->emitIntValue(cast<ConstantInt>(ThunkType)->getValue());
   }
 }
 

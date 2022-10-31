@@ -723,6 +723,10 @@ public:
   /// Emit an integer value corresponding to the call site encoding
   void emitCallSiteValue(uint64_t Value, unsigned Encoding) const;
 
+  virtual void emitHybmpList(const DataLayout &DL, const Constant *List) {
+    llvm_unreachable("only used for arm64ec");
+  }
+
   /// Get the value for DW_AT_APPLE_isa. Zero if no isa encoding specified.
   virtual unsigned getISAEncoding() { return 0; }
 

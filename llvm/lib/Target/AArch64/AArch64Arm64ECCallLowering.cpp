@@ -20,6 +20,7 @@
 #include "llvm/ADT/Statistic.h"
 #include "llvm/ADT/Triple.h"
 #include "llvm/IR/CallingConv.h"
+#include "llvm/IR/GlobalVariable.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/InitializePasses.h"
@@ -52,6 +53,13 @@ public:
   bool genEntryThunk(Function &F);
   bool runOnModule(Module &Mod) override;
 
+  // TODO: find the other types
+  enum HybridInfoType {
+    Exitthunk_To_Guest = 0,
+    Native_To_Entrythunk = 1,
+    Native_To_Icall_Thunk = 4
+  };
+
 private:
   int cfguard_module_flag = 0;
   FunctionType *GuardFnType = nullptr;
@@ -59,6 +67,9 @@ private:
   Constant *GuardFnCFGlobal = nullptr;
   Constant *GuardFnGlobal = nullptr;
   Module *M = nullptr;
+
+  StructType *HybridInfoStructType = nullptr;
+  SmallVector<llvm::Constant *, 64> HybridInfoTable;
 
   Type *I8PtrTy;
   Type *I64Ty;
@@ -74,6 +85,7 @@ private:
   Type *canonicalizeThunkType(Type *T, Align Alignment, bool EntryThunk,
                               bool Ret, uint64_t ArgSizeBytes,
                               raw_ostream &Out);
+  void addHybridInfo(Function *From, Function *To, HybridInfoType InfoType);
 };
 
 } // end anonymous namespace
@@ -229,6 +241,14 @@ Type *AArch64Arm64ECCallLowering::canonicalizeThunkType(
     }
   }
   return CanonicalizedTy;
+}
+
+void AArch64Arm64ECCallLowering::addHybridInfo(Function *From, Function *To,
+                                               HybridInfoType InfoType) {
+  Constant *HybridInfo[3] = {
+      From, To, ConstantInt::get(Type::getInt32Ty(M->getContext()), InfoType)};
+  HybridInfoTable.push_back(
+      ConstantStruct::get(HybridInfoStructType, HybridInfo));
 }
 
 Function *AArch64Arm64ECCallLowering::buildExitThunk(CallBase *CB) {
@@ -452,9 +472,23 @@ bool AArch64Arm64ECCallLowering::runOnModule(Module &Mod) {
   GuardFnGlobal =
       M->getOrInsertGlobal("__os_arm64x_check_icall", GuardFnPtrType);
 
+  HybridInfoStructType =
+      StructType::get(I8PtrTy, I8PtrTy, Type::getInt32Ty(M->getContext()));
+  HybridInfoTable.clear();
+
   for (auto &F : M->getFunctionList()) {
     genEntryThunk(F);
     genExitThunk(F);
+  }
+
+  if (HybridInfoTable.size()) {
+    ArrayType *HybridTableType =
+        ArrayType::get(HybridInfoStructType, HybridInfoTable.size());
+    Constant *HybridTableInit =
+        ConstantArray::get(HybridTableType, HybridInfoTable);
+    new GlobalVariable(*M, HybridTableType, true,
+                       GlobalValue::LinkageTypes::ExternalLinkage,
+                       HybridTableInit, "arm64ec.hybmp");
   }
 
   return true;
