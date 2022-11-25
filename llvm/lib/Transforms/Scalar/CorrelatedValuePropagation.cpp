@@ -1075,6 +1075,44 @@ static Constant *getConstantAt(Value *V, Instruction *At, LazyValueInfo *LVI) {
     ConstantInt::getFalse(C->getContext());
 }
 
+static bool processByDomEq(LazyValueInfo *LVI, Instruction &I) {
+  unsigned Opcode = I.getOpcode();
+  Value *ReplacedVal = nullptr;
+  switch (Opcode) {
+  case Instruction::Sub:
+  case Instruction::Xor:
+  case Instruction::URem:
+  case Instruction::SRem: {
+    LazyValueInfo::Tristate Result =
+      LVI->getPredicateAt(CmpInst::ICMP_EQ, I.getOperand(0), I.getOperand(1), &I, true);
+    if (Result == LazyValueInfo::True)
+      ReplacedVal = Constant::getNullValue(I.getType());
+    break;
+  }
+
+  case Instruction::SDiv:
+  case Instruction::UDiv: {
+    LazyValueInfo::Tristate Result =
+      LVI->getPredicateAt(CmpInst::ICMP_EQ, I.getOperand(0), I.getOperand(1), &I, true);
+    if (Result == LazyValueInfo::True)
+      ReplacedVal = ConstantInt::get(I.getType(), 1);
+    break;
+  }
+
+  // TODO: And/Or can return Op0/Op1 direct.
+  default:
+    break;
+  }
+
+  if (ReplacedVal) {
+    I.replaceAllUsesWith(ReplacedVal);
+    I.eraseFromParent();
+    return true;
+  }
+
+  return false;
+}
+
 static bool runImpl(Function &F, LazyValueInfo *LVI, DominatorTree *DT,
                     const SimplifyQuery &SQ) {
   bool FnChanged = false;
@@ -1129,6 +1167,8 @@ static bool runImpl(Function &F, LazyValueInfo *LVI, DominatorTree *DT,
         BBChanged |= processAnd(cast<BinaryOperator>(&II), LVI);
         break;
       }
+      
+      BBChanged |= processByDomEq(LVI, II);
     }
 
     Instruction *Term = BB->getTerminator();
