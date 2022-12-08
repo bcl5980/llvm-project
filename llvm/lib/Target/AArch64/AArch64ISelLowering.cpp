@@ -2264,6 +2264,7 @@ const char *AArch64TargetLowering::getTargetNodeName(unsigned Opcode) const {
     MAKE_CASE(AArch64ISD::SBCS)
     MAKE_CASE(AArch64ISD::ANDS)
     MAKE_CASE(AArch64ISD::SBIC)
+    MAKE_CASE(AArch64ISD::SEON)
     MAKE_CASE(AArch64ISD::CCMP)
     MAKE_CASE(AArch64ISD::CCMN)
     MAKE_CASE(AArch64ISD::FCCMP)
@@ -14971,12 +14972,56 @@ static SDValue performUADDVCombine(SDNode *N, SelectionDAG &DAG) {
   return SDValue();
 }
 
+// ((X & C) ^ Y) ^ C --> eon Y, (X | ~C)
+static SDValue performXORCombineWithNotOp(SDNode *N, SelectionDAG &DAG) {
+  EVT VT = N->getValueType(0);
+  if (VT != MVT::i32 && VT != MVT::i64)
+    return SDValue();
+
+  SDValue LHS = N->getOperand(0);
+  auto *XorC = dyn_cast<ConstantSDNode>(N->getOperand(1));
+  if (!XorC)
+    return SDValue();
+
+  SDLoc DL(N);
+  SDValue X, Y, C;
+  auto canGetNotFromXorAnd = [&](SDNode *N, SDValue Op0) {
+    if (Op0.getOpcode() != ISD::XOR || !Op0.hasOneUse())
+      return false;
+
+    Y = Op0.getOperand(1);
+    if (isa<ConstantSDNode>(Y))
+      return false;
+
+    SDValue AndVal = Op0.getOperand(0);
+    if (AndVal.getOpcode() != ISD::AND || !AndVal.hasOneUse())
+      return false;
+
+    ConstantSDNode *AndC = dyn_cast<ConstantSDNode>(AndVal.getOperand(1));
+    if (!AndC || AndC->getSExtValue() != XorC->getSExtValue())
+      return false;
+
+    C = DAG.getNOT(DL, AndVal.getOperand(1), VT);
+    X = AndVal.getOperand(0);
+    return true;
+  };
+
+  if (canGetNotFromXorAnd(N, LHS)) {
+    SDValue OrVal = DAG.getNode(ISD::OR, DL, VT, X, C);
+    return DAG.getNode(AArch64ISD::SEON, DL, VT, Y, OrVal);
+  }
+
+  return SDValue();
+}
 
 static SDValue performXorCombine(SDNode *N, SelectionDAG &DAG,
                                  TargetLowering::DAGCombinerInfo &DCI,
                                  const AArch64Subtarget *Subtarget) {
   if (DCI.isBeforeLegalizeOps())
     return SDValue();
+
+  if (SDValue R = performXORCombineWithNotOp(N, DAG))
+    return R;
 
   return foldVectorXorShiftIntoCmp(N, DAG, Subtarget);
 }

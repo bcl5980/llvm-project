@@ -197,9 +197,8 @@ define i64 @or_orn3(i32 %0, i64 %1) {
 define i64 @_Z6or_eon(i64 %0, i64 %1) {
 ; CHECK-LABEL: _Z6or_eon:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    and x8, x0, #0xfffffffffffff000
-; CHECK-NEXT:    eor x8, x8, x1
-; CHECK-NEXT:    eor x0, x8, #0xfffffffffffff000
+; CHECK-NEXT:    orr x8, x0, #0xfff
+; CHECK-NEXT:    eon x0, x1, x8
 ; CHECK-NEXT:    ret
   %3 = and i64 %0, -4096
   %4 = xor i64 %3, %1

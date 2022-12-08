@@ -614,6 +614,7 @@ def AArch64ccmn      : SDNode<"AArch64ISD::CCMN",  SDT_AArch64CCMP>;
 def AArch64fccmp     : SDNode<"AArch64ISD::FCCMP", SDT_AArch64FCCMP>;
 
 def AArch64sbic  : SDNode<"AArch64ISD::SBIC",  SDTIntBinOp>;
+def AArch64seon  : SDNode<"AArch64ISD::SEON",  SDTIntBinOp>;
 
 def AArch64threadpointer : SDNode<"AArch64ISD::THREAD_POINTER", SDTPtrLeaf>;
 
@@ -2222,6 +2223,8 @@ def : Pat<(not GPR32:$Wm), (ORNWrr WZR, GPR32:$Wm)>;
 def : Pat<(not GPR64:$Xm), (ORNXrr XZR, GPR64:$Xm)>;
 def : Pat<(AArch64sbic GPR32:$Wm, GPR32:$Wn), (BICWrr GPR32:$Wm, GPR32:$Wn)>;
 def : Pat<(AArch64sbic GPR64:$Xm, GPR64:$Xn), (BICXrr GPR64:$Xm, GPR64:$Xn)>;
+def : Pat<(AArch64seon GPR32:$Wm, GPR32:$Wn), (EONWrr GPR32:$Wm, GPR32:$Wn)>;
+def : Pat<(AArch64seon GPR64:$Xm, GPR64:$Xn), (EONXrr GPR64:$Xm, GPR64:$Xn)>;
 
 //===----------------------------------------------------------------------===//
 // One operand data processing instructions.
