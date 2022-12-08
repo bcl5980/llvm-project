@@ -4,9 +4,8 @@
 define i64 @and_bic(i64 %0, i64 %1) {
 ; CHECK-LABEL: and_bic:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    mvn w8, w0
-; CHECK-NEXT:    orr x8, x8, #0xffffffffffff00ff
-; CHECK-NEXT:    and x0, x8, x1
+; CHECK-NEXT:    and x8, x0, #0xff00
+; CHECK-NEXT:    bic x0, x1, x8
 ; CHECK-NEXT:    ret
   %3 = and i64 %0, 65280
   %4 = xor i64 %3, -1
@@ -31,9 +30,8 @@ define i64 @and_bic2(i32 %0, i64 %1) {
 define i32 @and_bic3(i32 %0, i32 %1) {
 ; CHECK-LABEL: and_bic3:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    mvn w8, w0
-; CHECK-NEXT:    orr w8, w8, #0xffff00ff
-; CHECK-NEXT:    and w0, w8, w1
+; CHECK-NEXT:    and w8, w0, #0xff00
+; CHECK-NEXT:    bic w0, w1, w8
 ; CHECK-NEXT:    ret
   %3 = and i32 %0, 65280
   %4 = xor i32 %3, -1

@@ -153,6 +153,9 @@ enum NodeType : unsigned {
   SBCS,
   ANDS,
 
+  // Scalar logical instructions with not operand
+  SBIC,
+
   // Conditional compares. Operands: left,right,falsecc,cc,flags
   CCMP,
   CCMN,

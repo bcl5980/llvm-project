@@ -2263,6 +2263,7 @@ const char *AArch64TargetLowering::getTargetNodeName(unsigned Opcode) const {
     MAKE_CASE(AArch64ISD::ADCS)
     MAKE_CASE(AArch64ISD::SBCS)
     MAKE_CASE(AArch64ISD::ANDS)
+    MAKE_CASE(AArch64ISD::SBIC)
     MAKE_CASE(AArch64ISD::CCMP)
     MAKE_CASE(AArch64ISD::CCMN)
     MAKE_CASE(AArch64ISD::FCCMP)
@@ -16042,6 +16043,61 @@ static SDValue performSVEAndCombine(SDNode *N,
   return SDValue();
 }
 
+// (~X | C) & Y --> bic Y, (X & ~C)
+static SDValue performAndCombineWithNotOp(SDNode *N, SelectionDAG &DAG) {
+  EVT VT = N->getValueType(0);
+  if (VT != MVT::i32 && VT != MVT::i64)
+    return SDValue();
+
+  SDValue LHS = N->getOperand(0);
+  SDValue RHS = N->getOperand(1);
+
+  SDLoc DL(N);
+  SDValue X, C;
+  auto canGetNotFromOrXor = [&](SDNode *N, SDValue Op0) {
+    if (Op0.getOpcode() != ISD::OR || !Op0.hasOneUse())
+      return false;
+
+    if (!isa<ConstantSDNode>(Op0.getOperand(1)))
+      return false;
+
+    SDValue Op0LHS = Op0.getOperand(0);
+    if (!Op0LHS.hasOneUse())
+      return false;
+
+    if (Op0LHS->getOpcode() == ISD::ANY_EXTEND && VT == MVT::i64 &&
+        Op0LHS->getOperand(0).getValueType() == MVT::i32)
+      Op0LHS = Op0LHS->getOperand(0);
+
+    if (Op0LHS.getOpcode() != ISD::XOR || !Op0LHS.hasOneUse())
+      return false;
+
+    ConstantSDNode *XorC = dyn_cast<ConstantSDNode>(Op0LHS.getOperand(1));
+    if (!XorC || !XorC->isAllOnes())
+      return false;
+
+    C = DAG.getNOT(DL, Op0.getOperand(1), VT);
+    X = Op0LHS.getOperand(0);
+    return true;
+  };
+
+  if (canGetNotFromOrXor(N, LHS) && !isa<ConstantSDNode>(RHS)) {
+    if (X.getValueType() != VT)
+      X = DAG.getNode(ISD::ANY_EXTEND, DL, VT, X);
+    SDValue AndVal = DAG.getNode(ISD::AND, DL, VT, X, C);
+    return DAG.getNode(AArch64ISD::SBIC, DL, VT, RHS, AndVal);
+  }
+
+  if (canGetNotFromOrXor(N, RHS)) {
+    if (X.getValueType() != VT)
+      X = DAG.getNode(ISD::ANY_EXTEND, DL, VT, X);
+    SDValue AndVal = DAG.getNode(ISD::AND, DL, VT, X, C);
+    return DAG.getNode(AArch64ISD::SBIC, DL, VT, LHS, AndVal);
+  }
+
+  return SDValue();
+}
+
 static SDValue performANDCombine(SDNode *N,
                                  TargetLowering::DAGCombinerInfo &DCI) {
   SelectionDAG &DAG = DCI.DAG;
@@ -16057,6 +16113,9 @@ static SDValue performANDCombine(SDNode *N,
 
   if (VT.isScalableVector())
     return performSVEAndCombine(N, DCI);
+
+  if (SDValue R = performAndCombineWithNotOp(N, DAG))
+    return R;
 
   // The combining code below works only for NEON vectors. In particular, it
   // does not work for SVE when dealing with vectors wider than 128 bits.

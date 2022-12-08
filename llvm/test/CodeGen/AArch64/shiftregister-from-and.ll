@@ -21,9 +21,9 @@ define i64 @and_shiftedreg_from_and(i64 %a, i64 %b) {
 define i64 @bic_shiftedreg_from_and(i64 %a, i64 %b) {
 ; CHECK-LABEL: bic_shiftedreg_from_and:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    mov w8, #16777215
-; CHECK-NEXT:    orn x8, x8, x0, asr #23
-; CHECK-NEXT:    and x0, x1, x8
+; CHECK-NEXT:    asr x8, x0, #23
+; CHECK-NEXT:    and x8, x8, #0xffffffffff000000
+; CHECK-NEXT:    bic x0, x1, x8
 ; CHECK-NEXT:    ret
   %ashr = ashr i64 %a, 23
   %and = and i64 %ashr, -16777216

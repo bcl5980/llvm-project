@@ -613,6 +613,8 @@ def AArch64ccmp      : SDNode<"AArch64ISD::CCMP",  SDT_AArch64CCMP>;
 def AArch64ccmn      : SDNode<"AArch64ISD::CCMN",  SDT_AArch64CCMP>;
 def AArch64fccmp     : SDNode<"AArch64ISD::FCCMP", SDT_AArch64FCCMP>;
 
+def AArch64sbic  : SDNode<"AArch64ISD::SBIC",  SDTIntBinOp>;
+
 def AArch64threadpointer : SDNode<"AArch64ISD::THREAD_POINTER", SDTPtrLeaf>;
 
 def AArch64fcmp         : SDNode<"AArch64ISD::FCMP", SDT_AArch64FCmp>;
@@ -2218,7 +2220,8 @@ def : InstAlias<"tst $src1, $src2$sh",
 
 def : Pat<(not GPR32:$Wm), (ORNWrr WZR, GPR32:$Wm)>;
 def : Pat<(not GPR64:$Xm), (ORNXrr XZR, GPR64:$Xm)>;
-
+def : Pat<(AArch64sbic GPR32:$Wm, GPR32:$Wn), (BICWrr GPR32:$Wm, GPR32:$Wn)>;
+def : Pat<(AArch64sbic GPR64:$Xm, GPR64:$Xn), (BICXrr GPR64:$Xm, GPR64:$Xn)>;
 
 //===----------------------------------------------------------------------===//
 // One operand data processing instructions.
