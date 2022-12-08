@@ -5,9 +5,10 @@ define i128 @shl(i128 %r, i128 %s) nounwind readnone {
 ; CHECK-LABEL: shl:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    lsl x8, x1, x2
-; CHECK-NEXT:    mvn w9, w2
-; CHECK-NEXT:    lsr x10, x0, #1
-; CHECK-NEXT:    lsr x9, x10, x9
+; CHECK-NEXT:    lsr x9, x0, #1
+; CHECK-NEXT:    mvn x10, x2
+; CHECK-NEXT:    // kill: def $w10 killed $w10 killed $x10 def $x10
+; CHECK-NEXT:    lsr x9, x9, x10
 ; CHECK-NEXT:    orr x8, x8, x9
 ; CHECK-NEXT:    lsl x9, x0, x2
 ; CHECK-NEXT:    tst x2, #0x40
@@ -21,10 +22,11 @@ define i128 @shl(i128 %r, i128 %s) nounwind readnone {
 define i128 @shl_mask(i128 %r, i128 %s) nounwind readnone {
 ; CHECK-LABEL: shl_mask:
 ; CHECK:       // %bb.0:
+; CHECK-NEXT:    // kill: def $w2 killed $w2 killed $x2 def $x2
 ; CHECK-NEXT:    lsl x8, x1, x2
 ; CHECK-NEXT:    lsr x9, x0, #1
-; CHECK-NEXT:    and x10, x2, #0x3f
-; CHECK-NEXT:    eor x10, x10, #0x3f
+; CHECK-NEXT:    and w10, w2, #0x3f
+; CHECK-NEXT:    eor w10, w10, #0x3f
 ; CHECK-NEXT:    lsr x9, x9, x10
 ; CHECK-NEXT:    orr x1, x8, x9
 ; CHECK-NEXT:    lsl x0, x0, x2
@@ -38,9 +40,10 @@ define i128 @ashr(i128 %r, i128 %s) nounwind readnone {
 ; CHECK-LABEL: ashr:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    lsr x8, x0, x2
-; CHECK-NEXT:    mvn w9, w2
-; CHECK-NEXT:    lsl x10, x1, #1
-; CHECK-NEXT:    lsl x9, x10, x9
+; CHECK-NEXT:    lsl x9, x1, #1
+; CHECK-NEXT:    mvn x10, x2
+; CHECK-NEXT:    // kill: def $w10 killed $w10 killed $x10 def $x10
+; CHECK-NEXT:    lsl x9, x9, x10
 ; CHECK-NEXT:    orr x8, x9, x8
 ; CHECK-NEXT:    asr x9, x1, x2
 ; CHECK-NEXT:    tst x2, #0x40
@@ -55,10 +58,11 @@ define i128 @ashr(i128 %r, i128 %s) nounwind readnone {
 define i128 @ashr_mask(i128 %r, i128 %s) nounwind readnone {
 ; CHECK-LABEL: ashr_mask:
 ; CHECK:       // %bb.0:
+; CHECK-NEXT:    // kill: def $w2 killed $w2 killed $x2 def $x2
 ; CHECK-NEXT:    lsr x8, x0, x2
 ; CHECK-NEXT:    lsl x9, x1, #1
-; CHECK-NEXT:    and x10, x2, #0x3f
-; CHECK-NEXT:    eor x10, x10, #0x3f
+; CHECK-NEXT:    and w10, w2, #0x3f
+; CHECK-NEXT:    eor w10, w10, #0x3f
 ; CHECK-NEXT:    lsl x9, x9, x10
 ; CHECK-NEXT:    orr x0, x8, x9
 ; CHECK-NEXT:    asr x1, x1, x2
@@ -72,9 +76,10 @@ define i128 @lshr(i128 %r, i128 %s) nounwind readnone {
 ; CHECK-LABEL: lshr:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    lsr x8, x0, x2
-; CHECK-NEXT:    mvn w9, w2
-; CHECK-NEXT:    lsl x10, x1, #1
-; CHECK-NEXT:    lsl x9, x10, x9
+; CHECK-NEXT:    lsl x9, x1, #1
+; CHECK-NEXT:    mvn x10, x2
+; CHECK-NEXT:    // kill: def $w10 killed $w10 killed $x10 def $x10
+; CHECK-NEXT:    lsl x9, x9, x10
 ; CHECK-NEXT:    orr x8, x9, x8
 ; CHECK-NEXT:    lsr x9, x1, x2
 ; CHECK-NEXT:    tst x2, #0x40
@@ -88,10 +93,11 @@ define i128 @lshr(i128 %r, i128 %s) nounwind readnone {
 define i128 @lshr_mask(i128 %r, i128 %s) nounwind readnone {
 ; CHECK-LABEL: lshr_mask:
 ; CHECK:       // %bb.0:
+; CHECK-NEXT:    // kill: def $w2 killed $w2 killed $x2 def $x2
 ; CHECK-NEXT:    lsr x8, x0, x2
 ; CHECK-NEXT:    lsl x9, x1, #1
-; CHECK-NEXT:    and x10, x2, #0x3f
-; CHECK-NEXT:    eor x10, x10, #0x3f
+; CHECK-NEXT:    and w10, w2, #0x3f
+; CHECK-NEXT:    eor w10, w10, #0x3f
 ; CHECK-NEXT:    lsl x9, x9, x10
 ; CHECK-NEXT:    orr x0, x8, x9
 ; CHECK-NEXT:    lsr x1, x1, x2

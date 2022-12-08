@@ -138,7 +138,7 @@ define i64 @test_and1(i64 %x, i64 %y) {
 define i64 @test_and2(i64 %x, i64 %y) {
 ; CHECK-LABEL: test_and2:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    tst x0, #0x3
+; CHECK-NEXT:    tst w0, #0x3
 ; CHECK-NEXT:    csel x0, x0, x1, eq
 ; CHECK-NEXT:    ret
   %a = and i64 %x, 3

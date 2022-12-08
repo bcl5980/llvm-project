@@ -24,22 +24,12 @@ define i32 @add_z_shli8i32(i8 %v, i32 %lhs) minsize {
 }
 
 define i64 @add_z_i8i64(i8 %v, i64 %lhs) minsize {
-; CHECK-LABEL: add_z_i8i64:
-; CHECK:       // %bb.0:
-; CHECK-NEXT:    // kill: def $w0 killed $w0 def $x0
-; CHECK-NEXT:    add x0, x1, w0, uxtb
-; CHECK-NEXT:    ret
   %vz = zext i8 %v to i64
   %r = add i64 %lhs, %vz
   ret i64 %r
 }
 
 define i64 @add_z_shli8i64(i8 %v, i64 %lhs) minsize {
-; CHECK-LABEL: add_z_shli8i64:
-; CHECK:       // %bb.0:
-; CHECK-NEXT:    // kill: def $w0 killed $w0 def $x0
-; CHECK-NEXT:    add x0, x1, w0, uxtb #3
-; CHECK-NEXT:    ret
   %vz = zext i8 %v to i64
   %s = shl i64 %vz, 3
   %r = add i64 %lhs, %s
@@ -112,22 +102,12 @@ define i32 @add_z_shli16i32(i16 %v, i32 %lhs) minsize {
 }
 
 define i64 @add_z_i16i64(i16 %v, i64 %lhs) minsize {
-; CHECK-LABEL: add_z_i16i64:
-; CHECK:       // %bb.0:
-; CHECK-NEXT:    // kill: def $w0 killed $w0 def $x0
-; CHECK-NEXT:    add x0, x1, w0, uxth
-; CHECK-NEXT:    ret
   %vz = zext i16 %v to i64
   %r = add i64 %lhs, %vz
   ret i64 %r
 }
 
 define i64 @add_z_shli16i64(i16 %v, i64 %lhs) minsize {
-; CHECK-LABEL: add_z_shli16i64:
-; CHECK:       // %bb.0:
-; CHECK-NEXT:    // kill: def $w0 killed $w0 def $x0
-; CHECK-NEXT:    add x0, x1, w0, uxth #3
-; CHECK-NEXT:    ret
   %vz = zext i16 %v to i64
   %s = shl i64 %vz, 3
   %r = add i64 %lhs, %s
@@ -242,22 +222,12 @@ define i32 @sub_z_shli8i32(i8 %v, i32 %lhs) minsize {
 }
 
 define i64 @sub_z_i8i64(i8 %v, i64 %lhs) minsize {
-; CHECK-LABEL: sub_z_i8i64:
-; CHECK:       // %bb.0:
-; CHECK-NEXT:    // kill: def $w0 killed $w0 def $x0
-; CHECK-NEXT:    sub x0, x1, w0, uxtb
-; CHECK-NEXT:    ret
   %vz = zext i8 %v to i64
   %r = sub i64 %lhs, %vz
   ret i64 %r
 }
 
 define i64 @sub_z_shli8i64(i8 %v, i64 %lhs) minsize {
-; CHECK-LABEL: sub_z_shli8i64:
-; CHECK:       // %bb.0:
-; CHECK-NEXT:    // kill: def $w0 killed $w0 def $x0
-; CHECK-NEXT:    sub x0, x1, w0, uxtb #3
-; CHECK-NEXT:    ret
   %vz = zext i8 %v to i64
   %s = shl i64 %vz, 3
   %r = sub i64 %lhs, %s
@@ -330,22 +300,12 @@ define i32 @sub_z_shli16i32(i16 %v, i32 %lhs) minsize {
 }
 
 define i64 @sub_z_i16i64(i16 %v, i64 %lhs) minsize {
-; CHECK-LABEL: sub_z_i16i64:
-; CHECK:       // %bb.0:
-; CHECK-NEXT:    // kill: def $w0 killed $w0 def $x0
-; CHECK-NEXT:    sub x0, x1, w0, uxth
-; CHECK-NEXT:    ret
   %vz = zext i16 %v to i64
   %r = sub i64 %lhs, %vz
   ret i64 %r
 }
 
 define i64 @sub_z_shli16i64(i16 %v, i64 %lhs) minsize {
-; CHECK-LABEL: sub_z_shli16i64:
-; CHECK:       // %bb.0:
-; CHECK-NEXT:    // kill: def $w0 killed $w0 def $x0
-; CHECK-NEXT:    sub x0, x1, w0, uxth #3
-; CHECK-NEXT:    ret
   %vz = zext i16 %v to i64
   %s = shl i64 %vz, 3
   %r = sub i64 %lhs, %s

@@ -1003,7 +1003,7 @@ define float @foo_vararg(%swift_error** swifterror %error_ptr_ref, ...) {
 ; CHECK-APPLE-ARM64_32-NEXT:    mov w8, #1
 ; CHECK-APPLE-ARM64_32-NEXT:    add x9, x29, #16
 ; CHECK-APPLE-ARM64_32-NEXT:    orr w10, w9, #0x4
-; CHECK-APPLE-ARM64_32-NEXT:    and x11, x9, #0xfffffff0
+; CHECK-APPLE-ARM64_32-NEXT:    mov w11, w9
 ; CHECK-APPLE-ARM64_32-NEXT:    strb w8, [x0, #8]
 ; CHECK-APPLE-ARM64_32-NEXT:    stur w10, [x29, #-8]
 ; CHECK-APPLE-ARM64_32-NEXT:    ldr w8, [x11]

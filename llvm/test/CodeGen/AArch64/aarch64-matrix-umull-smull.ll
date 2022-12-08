@@ -5,9 +5,8 @@ define void @matrix_mul_unsigned(i32 %N, i32* nocapture %C, i16* nocapture reado
 ; CHECK-LABEL: matrix_mul_unsigned:
 ; CHECK:       // %bb.0: // %vector.header
 ; CHECK-NEXT:    and w8, w3, #0xffff
-; CHECK-NEXT:    // kill: def $w0 killed $w0 def $x0
 ; CHECK-NEXT:    dup v0.4h, w8
-; CHECK-NEXT:    and x8, x0, #0xfffffff8
+; CHECK-NEXT:    and w8, w0, #0xfffffff8
 ; CHECK-NEXT:  .LBB0_1: // %vector.body
 ; CHECK-NEXT:    // =>This Inner Loop Header: Depth=1
 ; CHECK-NEXT:    add x9, x2, w0, uxtw #1
@@ -69,9 +68,8 @@ define void @matrix_mul_signed(i32 %N, i32* nocapture %C, i16* nocapture readonl
 ; CHECK-LABEL: matrix_mul_signed:
 ; CHECK:       // %bb.0: // %vector.header
 ; CHECK-NEXT:    sxth w8, w3
-; CHECK-NEXT:    // kill: def $w0 killed $w0 def $x0
 ; CHECK-NEXT:    dup v0.4h, w8
-; CHECK-NEXT:    and x8, x0, #0xfffffff8
+; CHECK-NEXT:    and w8, w0, #0xfffffff8
 ; CHECK-NEXT:  .LBB1_1: // %vector.body
 ; CHECK-NEXT:    // =>This Inner Loop Header: Depth=1
 ; CHECK-NEXT:    add x9, x2, w0, sxtw #1
@@ -136,8 +134,7 @@ define void @matrix_mul_double_shuffle(i32 %N, i32* nocapture %C, i16* nocapture
 ; CHECK-NEXT:    and w8, w3, #0xffff
 ; CHECK-NEXT:    // kill: def $w0 killed $w0 def $x0
 ; CHECK-NEXT:    dup v0.4h, w8
-; CHECK-NEXT:    and x8, x0, #0xfffffff8
-; CHECK-NEXT:    // kill: def $w0 killed $w0 killed $x0 def $x0
+; CHECK-NEXT:    and w8, w0, #0xfffffff8
 ; CHECK-NEXT:  .LBB2_1: // %vector.body
 ; CHECK-NEXT:    // =>This Inner Loop Header: Depth=1
 ; CHECK-NEXT:    ldrh w9, [x2], #16
@@ -200,7 +197,7 @@ define void @larger_smull(i16* nocapture noundef readonly %x, i16 noundef %y, i3
 ; CHECK-NEXT:    mov x10, xzr
 ; CHECK-NEXT:    b .LBB3_6
 ; CHECK-NEXT:  .LBB3_3: // %vector.ph
-; CHECK-NEXT:    and x10, x9, #0xfffffff0
+; CHECK-NEXT:    and w10, w9, #0xfffffff0
 ; CHECK-NEXT:    add x11, x2, #32
 ; CHECK-NEXT:    add x12, x0, #16
 ; CHECK-NEXT:    mov x13, x10
@@ -312,7 +309,7 @@ define void @larger_umull(i16* nocapture noundef readonly %x, i16 noundef %y, i3
 ; CHECK-NEXT:    mov x10, xzr
 ; CHECK-NEXT:    b .LBB4_6
 ; CHECK-NEXT:  .LBB4_3: // %vector.ph
-; CHECK-NEXT:    and x10, x9, #0xfffffff0
+; CHECK-NEXT:    and w10, w9, #0xfffffff0
 ; CHECK-NEXT:    add x11, x2, #32
 ; CHECK-NEXT:    add x12, x0, #16
 ; CHECK-NEXT:    mov x13, x10
@@ -428,7 +425,7 @@ define i16 @red_mla_dup_ext_u8_s8_s16(i8* noalias nocapture noundef readonly %A,
 ; CHECK-NEXT:    ret
 ; CHECK-NEXT:  .LBB5_4: // %vector.ph
 ; CHECK-NEXT:    dup v2.8b, w9
-; CHECK-NEXT:    and x11, x10, #0xfffffff0
+; CHECK-NEXT:    and w11, w10, #0xfffffff0
 ; CHECK-NEXT:    movi v0.2d, #0000000000000000
 ; CHECK-NEXT:    add x8, x0, #8
 ; CHECK-NEXT:    movi v1.2d, #0000000000000000

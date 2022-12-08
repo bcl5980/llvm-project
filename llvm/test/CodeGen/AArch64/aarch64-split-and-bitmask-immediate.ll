@@ -53,9 +53,9 @@ entry:
 define i8 @test4(i64 %a) {
 ; CHECK-LABEL: test4:
 ; CHECK:       // %bb.0: // %entry
-; CHECK-NEXT:    and x8, x0, #0x3ffc00
-; CHECK-NEXT:    and x8, x8, #0xffffffffffe007ff
-; CHECK-NEXT:    cmp x8, #1024
+; CHECK-NEXT:    and w8, w0, #0x3ffc00
+; CHECK-NEXT:    and w8, w8, #0xffe007ff
+; CHECK-NEXT:    cmp w8, #1024
 ; CHECK-NEXT:    cset w0, eq
 ; CHECK-NEXT:    ret
 entry:
@@ -85,8 +85,8 @@ define i8 @test6(i64 %a) {
 ; CHECK-LABEL: test6:
 ; CHECK:       // %bb.0: // %entry
 ; CHECK-NEXT:    mov w8, #135
-; CHECK-NEXT:    and x8, x0, x8
-; CHECK-NEXT:    cmp x8, #1024
+; CHECK-NEXT:    and w8, w0, w8
+; CHECK-NEXT:    cmp w8, #1024
 ; CHECK-NEXT:    cset w0, eq
 ; CHECK-NEXT:    ret
 entry:
@@ -103,8 +103,8 @@ define i8 @test7(i64 %a) {
 ; CHECK:       // %bb.0: // %entry
 ; CHECK-NEXT:    mov w8, #1024
 ; CHECK-NEXT:    movk w8, #33, lsl #16
-; CHECK-NEXT:    and x8, x0, x8
-; CHECK-NEXT:    cmp x8, #1024
+; CHECK-NEXT:    and w8, w0, w8
+; CHECK-NEXT:    cmp w8, #1024
 ; CHECK-NEXT:    cset w0, eq
 ; CHECK-NEXT:    ret
 entry:
@@ -119,9 +119,9 @@ entry:
 define void @test8(i64 %a, i64* noalias %src, i64* noalias %dst, i64 %n) {
 ; CHECK-LABEL: test8:
 ; CHECK:       // %bb.0: // %loop.ph
-; CHECK-NEXT:    and x9, x0, #0x3ffc00
+; CHECK-NEXT:    and w9, w0, #0x3ffc00
 ; CHECK-NEXT:    mov x8, xzr
-; CHECK-NEXT:    and x9, x9, #0xffffffffffe007ff
+; CHECK-NEXT:    and w9, w9, #0xffe007ff
 ; CHECK-NEXT:    b .LBB7_2
 ; CHECK-NEXT:  .LBB7_1: // %for.inc
 ; CHECK-NEXT:    // in Loop: Header=BB7_2 Depth=1
@@ -254,8 +254,8 @@ define i8 @test11(i64 %a) {
 ; CHECK-LABEL: test11:
 ; CHECK:       // %bb.0: // %entry
 ; CHECK-NEXT:    mov w8, #-1610612736
-; CHECK-NEXT:    and x8, x0, x8
-; CHECK-NEXT:    cmp x8, #1024
+; CHECK-NEXT:    and w8, w0, w8
+; CHECK-NEXT:    cmp w8, #1024
 ; CHECK-NEXT:    cset w0, eq
 ; CHECK-NEXT:    ret
 entry:

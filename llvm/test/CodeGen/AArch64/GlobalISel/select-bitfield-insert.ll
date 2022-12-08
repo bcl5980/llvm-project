@@ -58,11 +58,17 @@ bb:
 }
 
 define i64 @bfi_x_31(i64 %in1, i64 %in2) {
-; CHECK-LABEL: bfi_x_31:
-; CHECK:       ; %bb.0: ; %bb
-; CHECK-NEXT:    bfi x1, x0, #31, #33
-; CHECK-NEXT:    mov x0, x1
-; CHECK-NEXT:    ret
+; GISEL-LABEL: bfi_x_31:
+; GISEL:       ; %bb.0: ; %bb
+; GISEL-NEXT:    bfi x1, x0, #31, #33
+; GISEL-NEXT:    mov x0, x1
+; GISEL-NEXT:    ret
+;
+; SDAG-LABEL: bfi_x_31:
+; SDAG:       ; %bb.0: ; %bb
+; SDAG-NEXT:    and w8, w1, #0x7fffffff
+; SDAG-NEXT:    orr x0, x8, x0, lsl #31
+; SDAG-NEXT:    ret
 bb:
   %tmp3 = shl i64 %in1, 31
   %tmp4 = and i64 %in2, 2147483647
@@ -71,11 +77,17 @@ bb:
 }
 
 define i64 @bfi_x_8(i64 %in1, i64 %in2) {
-; CHECK-LABEL: bfi_x_8:
-; CHECK:       ; %bb.0: ; %bb
-; CHECK-NEXT:    bfi x1, x0, #8, #56
-; CHECK-NEXT:    mov x0, x1
-; CHECK-NEXT:    ret
+; GISEL-LABEL: bfi_x_8:
+; GISEL:       ; %bb.0: ; %bb
+; GISEL-NEXT:    bfi x1, x0, #8, #56
+; GISEL-NEXT:    mov x0, x1
+; GISEL-NEXT:    ret
+;
+; SDAG-LABEL: bfi_x_8:
+; SDAG:       ; %bb.0: ; %bb
+; SDAG-NEXT:    and w8, w1, #0xff
+; SDAG-NEXT:    orr x0, x8, x0, lsl #8
+; SDAG-NEXT:    ret
 bb:
   %tmp3 = shl i64 %in1, 8
   %tmp4 = and i64 %in2, 255
@@ -84,11 +96,17 @@ bb:
 }
 
 define i64 @bfi_x_1(i64 %in1, i64 %in2) {
-; CHECK-LABEL: bfi_x_1:
-; CHECK:       ; %bb.0: ; %bb
-; CHECK-NEXT:    bfi x1, x0, #1, #63
-; CHECK-NEXT:    mov x0, x1
-; CHECK-NEXT:    ret
+; GISEL-LABEL: bfi_x_1:
+; GISEL:       ; %bb.0: ; %bb
+; GISEL-NEXT:    bfi x1, x0, #1, #63
+; GISEL-NEXT:    mov x0, x1
+; GISEL-NEXT:    ret
+;
+; SDAG-LABEL: bfi_x_1:
+; SDAG:       ; %bb.0: ; %bb
+; SDAG-NEXT:    and w8, w1, #0x1
+; SDAG-NEXT:    orr x0, x8, x0, lsl #1
+; SDAG-NEXT:    ret
 bb:
   %tmp3 = shl i64 %in1, 1
   %tmp4 = and i64 %in2, 1
@@ -97,11 +115,17 @@ bb:
 }
 
 define i64 @bfi_x_1_swapped(i64 %in1, i64 %in2) {
-; CHECK-LABEL: bfi_x_1_swapped:
-; CHECK:       ; %bb.0: ; %bb
-; CHECK-NEXT:    bfi x1, x0, #1, #63
-; CHECK-NEXT:    mov x0, x1
-; CHECK-NEXT:    ret
+; GISEL-LABEL: bfi_x_1_swapped:
+; GISEL:       ; %bb.0: ; %bb
+; GISEL-NEXT:    bfi x1, x0, #1, #63
+; GISEL-NEXT:    mov x0, x1
+; GISEL-NEXT:    ret
+;
+; SDAG-LABEL: bfi_x_1_swapped:
+; SDAG:       ; %bb.0: ; %bb
+; SDAG-NEXT:    and w8, w1, #0x1
+; SDAG-NEXT:    orr x0, x8, x0, lsl #1
+; SDAG-NEXT:    ret
 bb:
   %tmp3 = shl i64 %in1, 1
   %tmp4 = and i64 %in2, 1
@@ -120,10 +144,11 @@ define i64 @extra_use1(i64 %in1, i64 %in2, ptr %p) {
 ;
 ; SDAG-LABEL: extra_use1:
 ; SDAG:       ; %bb.0: ; %bb
-; SDAG-NEXT:    bfi x1, x0, #1, #63
-; SDAG-NEXT:    lsl x8, x0, #1
-; SDAG-NEXT:    mov x0, x1
-; SDAG-NEXT:    str x8, [x2]
+; SDAG-NEXT:    and w8, w1, #0x1
+; SDAG-NEXT:    lsl x9, x0, #1
+; SDAG-NEXT:    bfi x8, x0, #1, #63
+; SDAG-NEXT:    mov x0, x8
+; SDAG-NEXT:    str x9, [x2]
 ; SDAG-NEXT:    ret
 bb:
   %tmp3 = shl i64 %in1, 1

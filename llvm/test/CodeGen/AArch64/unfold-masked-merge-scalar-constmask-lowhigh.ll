@@ -45,8 +45,9 @@ define i32 @out32_constmask(i32 %x, i32 %y) {
 define i64 @out64_constmask(i64 %x, i64 %y) {
 ; CHECK-LABEL: out64_constmask:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    bfxil x1, x0, #0, #32
-; CHECK-NEXT:    mov x0, x1
+; CHECK-NEXT:    mov w8, w0
+; CHECK-NEXT:    and x9, x1, #0xffffffff00000000
+; CHECK-NEXT:    orr x0, x8, x9
 ; CHECK-NEXT:    ret
   %mx = and i64 %x, 4294967295
   %my = and i64 %y, -4294967296
@@ -100,7 +101,8 @@ define i32 @in32_constmask(i32 %x, i32 %y) {
 define i64 @in64_constmask(i64 %x, i64 %y) {
 ; CHECK-LABEL: in64_constmask:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    eor w8, w0, w1
+; CHECK-NEXT:    eor x8, x0, x1
+; CHECK-NEXT:    mov w8, w8
 ; CHECK-NEXT:    eor x0, x8, x1
 ; CHECK-NEXT:    ret
   %n0 = xor i64 %x, %y

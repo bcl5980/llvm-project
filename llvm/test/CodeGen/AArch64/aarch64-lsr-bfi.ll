@@ -45,8 +45,10 @@ define i32 @negative_lsr_bfi1(i32 %a) {
 define i64 @lsr_bfix(i64 %a) {
 ; CHECK-LABEL: lsr_bfix:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    lsr x8, x0, #20
-; CHECK-NEXT:    bfi x0, x8, #4, #4
+; CHECK-NEXT:    ubfx x8, x0, #16, #16
+; CHECK-NEXT:    and x9, x0, #0xffffffffffffff0f
+; CHECK-NEXT:    and w8, w8, #0xf0
+; CHECK-NEXT:    orr x0, x8, x9
 ; CHECK-NEXT:    ret
   %and1 = and i64 %a, -241
   %1 = lshr i64 %a, 16
@@ -71,9 +73,10 @@ define i64 @negative_lsr_bfix1(i64 %a) {
 ; CHECK-LABEL: negative_lsr_bfix1:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    lsr x8, x0, #16
-; CHECK-NEXT:    lsr x9, x8, #4
-; CHECK-NEXT:    bfi x0, x9, #4, #4
-; CHECK-NEXT:    add x0, x0, x8
+; CHECK-NEXT:    and x9, x0, #0xffffffffffffff0f
+; CHECK-NEXT:    and w10, w8, #0xf0
+; CHECK-NEXT:    orr x9, x10, x9
+; CHECK-NEXT:    add x0, x9, x8
 ; CHECK-NEXT:    ret
   %and1 = and i64 %a, -241
   %1 = lshr i64 %a, 16

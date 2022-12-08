@@ -137,8 +137,9 @@ define void @narrow_writeback_and(i64* %ptr) {
 ;
 ; CHECK-O3-LABEL: narrow_writeback_and:
 ; CHECK-O3:       # %bb.0:
-; CHECK-O3-NEXT:    movl $4294967040, %eax # imm = 0xFFFFFF00
-; CHECK-O3-NEXT:    andq %rax, (%rdi)
+; CHECK-O3-NEXT:    movq (%rdi), %rax
+; CHECK-O3-NEXT:    andl $-256, %eax
+; CHECK-O3-NEXT:    movq %rax, (%rdi)
 ; CHECK-O3-NEXT:    retq
   %v = load atomic i64, i64* %ptr unordered, align 8
   %v.new = and i64 %v, 4294967040 ;; 0xFFFF_FF00
@@ -2049,7 +2050,9 @@ define void @rmw_fold_and1(i64* %p, i64 %v) {
 ;
 ; CHECK-O3-LABEL: rmw_fold_and1:
 ; CHECK-O3:       # %bb.0:
-; CHECK-O3-NEXT:    andq $15, (%rdi)
+; CHECK-O3-NEXT:    movq (%rdi), %rax
+; CHECK-O3-NEXT:    andl $15, %eax
+; CHECK-O3-NEXT:    movq %rax, (%rdi)
 ; CHECK-O3-NEXT:    retq
   %prev = load atomic i64, i64* %p unordered, align 8
   %val = and i64 %prev, 15

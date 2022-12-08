@@ -242,7 +242,8 @@ define i32 @bextr64_32_a0(i64 %val, i64 %numskipbits, i64 %numlowbits) nounwind 
 ; CHECK-NEXT:    lsr x9, x0, x1
 ; CHECK-NEXT:    lsl x8, x8, x2
 ; CHECK-NEXT:    sub w8, w8, #1
-; CHECK-NEXT:    and w0, w8, w9
+; CHECK-NEXT:    and x0, x8, x9
+; CHECK-NEXT:    // kill: def $w0 killed $w0 killed $x0
 ; CHECK-NEXT:    ret
   %shifted = lshr i64 %val, %numskipbits
   %onebit = shl i64 1, %numlowbits
@@ -279,7 +280,8 @@ define i32 @bextr64_32_a2(i64 %val, i64 %numskipbits, i32 %numlowbits) nounwind 
 ; CHECK-NEXT:    lsr x9, x0, x1
 ; CHECK-NEXT:    lsl w8, w8, w2
 ; CHECK-NEXT:    sub w8, w8, #1
-; CHECK-NEXT:    and w0, w8, w9
+; CHECK-NEXT:    and x0, x8, x9
+; CHECK-NEXT:    // kill: def $w0 killed $w0 killed $x0
 ; CHECK-NEXT:    ret
   %shifted = lshr i64 %val, %numskipbits
   %onebit = shl i32 1, %numlowbits
@@ -476,7 +478,8 @@ define i32 @bextr64_32_b0(i64 %val, i64 %numskipbits, i8 %numlowbits) nounwind {
 ; CHECK-NEXT:    // kill: def $w2 killed $w2 def $x2
 ; CHECK-NEXT:    lsr x9, x0, x1
 ; CHECK-NEXT:    lsl x8, x8, x2
-; CHECK-NEXT:    bic w0, w9, w8
+; CHECK-NEXT:    bic x0, x9, x8
+; CHECK-NEXT:    // kill: def $w0 killed $w0 killed $x0
 ; CHECK-NEXT:    ret
   %shiftedval = lshr i64 %val, %numskipbits
   %widenumlowbits = zext i8 %numlowbits to i64
@@ -492,7 +495,6 @@ define i32 @bextr64_32_b1(i64 %val, i64 %numskipbits, i8 %numlowbits) nounwind {
 ; CHECK-LABEL: bextr64_32_b1:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    mov w8, #-1
-; CHECK-NEXT:    // kill: def $w2 killed $w2 def $x2
 ; CHECK-NEXT:    lsr x9, x0, x1
 ; CHECK-NEXT:    lsl w8, w8, w2
 ; CHECK-NEXT:    bic w0, w9, w8
@@ -512,10 +514,11 @@ define i32 @bextr64_32_b2(i64 %val, i64 %numskipbits, i8 %numlowbits) nounwind {
 ; CHECK-LABEL: bextr64_32_b2:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    mov w8, #-1
-; CHECK-NEXT:    // kill: def $w2 killed $w2 def $x2
 ; CHECK-NEXT:    lsr x9, x0, x1
 ; CHECK-NEXT:    lsl w8, w8, w2
-; CHECK-NEXT:    bic w0, w9, w8
+; CHECK-NEXT:    mvn w8, w8
+; CHECK-NEXT:    and x0, x9, x8
+; CHECK-NEXT:    // kill: def $w0 killed $w0 killed $x0
 ; CHECK-NEXT:    ret
   %shiftedval = lshr i64 %val, %numskipbits
   %widenumlowbits = zext i8 %numlowbits to i32
@@ -553,7 +556,6 @@ define i32 @bextr32_c1_indexzext(i32 %val, i8 %numskipbits, i8 %numlowbits) noun
 ; CHECK-NEXT:    mov w8, #32
 ; CHECK-NEXT:    mov w9, #-1
 ; CHECK-NEXT:    sub w8, w8, w2
-; CHECK-NEXT:    // kill: def $w1 killed $w1 def $x1
 ; CHECK-NEXT:    lsr w10, w0, w1
 ; CHECK-NEXT:    lsr w8, w9, w8
 ; CHECK-NEXT:    and w0, w8, w10
@@ -592,7 +594,6 @@ define i32 @bextr32_c3_load_indexzext(i32* %w, i8 %numskipbits, i8 %numlowbits) 
 ; CHECK-NEXT:    ldr w9, [x0]
 ; CHECK-NEXT:    sub w8, w8, w2
 ; CHECK-NEXT:    mov w10, #-1
-; CHECK-NEXT:    // kill: def $w1 killed $w1 def $x1
 ; CHECK-NEXT:    lsr w9, w9, w1
 ; CHECK-NEXT:    lsr w8, w10, w8
 ; CHECK-NEXT:    and w0, w8, w9
@@ -727,7 +728,8 @@ define i32 @bextr64_32_c0(i64 %val, i64 %numskipbits, i64 %numlowbits) nounwind 
 ; CHECK-NEXT:    mov x9, #-1
 ; CHECK-NEXT:    lsr x10, x0, x1
 ; CHECK-NEXT:    lsr x8, x9, x8
-; CHECK-NEXT:    and w0, w8, w10
+; CHECK-NEXT:    and x0, x8, x10
+; CHECK-NEXT:    // kill: def $w0 killed $w0 killed $x0
 ; CHECK-NEXT:    ret
   %shifted = lshr i64 %val, %numskipbits
   %numhighbits = sub i64 64, %numlowbits
@@ -764,7 +766,8 @@ define i32 @bextr64_32_c2(i64 %val, i64 %numskipbits, i32 %numlowbits) nounwind 
 ; CHECK-NEXT:    mov w9, #-1
 ; CHECK-NEXT:    lsr x10, x0, x1
 ; CHECK-NEXT:    lsr w8, w9, w8
-; CHECK-NEXT:    and w0, w8, w10
+; CHECK-NEXT:    and x0, x8, x10
+; CHECK-NEXT:    // kill: def $w0 killed $w0 killed $x0
 ; CHECK-NEXT:    ret
   %shifted = lshr i64 %val, %numskipbits
   %numhighbits = sub i32 32, %numlowbits
@@ -798,7 +801,6 @@ define i32 @bextr32_d1_indexzext(i32 %val, i8 %numskipbits, i8 %numlowbits) noun
 ; CHECK-LABEL: bextr32_d1_indexzext:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    mov w8, #32
-; CHECK-NEXT:    // kill: def $w1 killed $w1 def $x1
 ; CHECK-NEXT:    lsr w9, w0, w1
 ; CHECK-NEXT:    sub w8, w8, w2
 ; CHECK-NEXT:    lsl w9, w9, w8
@@ -836,7 +838,6 @@ define i32 @bextr32_d3_load_indexzext(i32* %w, i8 %numskipbits, i8 %numlowbits) 
 ; CHECK-NEXT:    mov w8, #32
 ; CHECK-NEXT:    ldr w9, [x0]
 ; CHECK-NEXT:    sub w8, w8, w2
-; CHECK-NEXT:    // kill: def $w1 killed $w1 def $x1
 ; CHECK-NEXT:    lsr w9, w9, w1
 ; CHECK-NEXT:    lsl w9, w9, w8
 ; CHECK-NEXT:    lsr w0, w9, w8
@@ -970,9 +971,9 @@ define i32 @bextr64_32_d1(i64 %val, i64 %numskipbits, i32 %numlowbits) nounwind 
 define void @pr38938(i32* %a0, i64* %a1) nounwind {
 ; CHECK-LABEL: pr38938:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    ldr x8, [x1]
-; CHECK-NEXT:    ubfx x8, x8, #21, #10
-; CHECK-NEXT:    lsl x8, x8, #2
+; CHECK-NEXT:    ldr w8, [x1]
+; CHECK-NEXT:    ubfx w8, w8, #21, #10
+; CHECK-NEXT:    ubfiz x8, x8, #2, #32
 ; CHECK-NEXT:    ldr w9, [x0, x8]
 ; CHECK-NEXT:    add w9, w9, #1
 ; CHECK-NEXT:    str w9, [x0, x8]
@@ -1041,7 +1042,8 @@ define i32 @c4_i32_bad(i32 %arg) nounwind {
 define i64 @c0_i64(i64 %arg) nounwind {
 ; CHECK-LABEL: c0_i64:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    ubfx x0, x0, #51, #10
+; CHECK-NEXT:    ubfx x8, x0, #51, #10
+; CHECK-NEXT:    mov w0, w8
 ; CHECK-NEXT:    ret
   %tmp0 = lshr i64 %arg, 51
   %tmp1 = and i64 %tmp0, 1023
@@ -1053,7 +1055,7 @@ define i64 @c1_i64(i64 %arg) nounwind {
 ; CHECK-LABEL: c1_i64:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    lsr x8, x0, #51
-; CHECK-NEXT:    and x0, x8, #0xffc
+; CHECK-NEXT:    and w0, w8, #0xffc
 ; CHECK-NEXT:    ret
   %tmp0 = lshr i64 %arg, 51
   %tmp1 = and i64 %tmp0, 4092
@@ -1065,7 +1067,8 @@ define i64 @c2_i64(i64 %arg) nounwind {
 ; CHECK-LABEL: c2_i64:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    ubfx x8, x0, #51, #10
-; CHECK-NEXT:    lsl x0, x8, #2
+; CHECK-NEXT:    // kill: def $w8 killed $w8 killed $x8 def $x8
+; CHECK-NEXT:    ubfiz x0, x8, #2, #32
 ; CHECK-NEXT:    ret
   %tmp0 = lshr i64 %arg, 51
   %tmp1 = and i64 %tmp0, 1023
@@ -1078,7 +1081,7 @@ define i64 @c4_i64_bad(i64 %arg) nounwind {
 ; CHECK-LABEL: c4_i64_bad:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    lsr x8, x0, #51
-; CHECK-NEXT:    and x0, x8, #0x1ffe
+; CHECK-NEXT:    and w0, w8, #0x1ffe
 ; CHECK-NEXT:    ret
   %tmp0 = lshr i64 %arg, 51
   %tmp1 = and i64 %tmp0, 16382
@@ -1139,6 +1142,7 @@ define void @c5_i64(i64 %arg, i64* %ptr) nounwind {
 ; CHECK-LABEL: c5_i64:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    ubfx x8, x0, #51, #10
+; CHECK-NEXT:    mov w8, w8
 ; CHECK-NEXT:    str x8, [x1]
 ; CHECK-NEXT:    ret
   %tmp0 = lshr i64 %arg, 51
@@ -1152,6 +1156,7 @@ define void @c6_i64(i64 %arg, i64* %ptr) nounwind {
 ; CHECK-LABEL: c6_i64:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    ubfx x8, x0, #51, #12
+; CHECK-NEXT:    mov w8, w8
 ; CHECK-NEXT:    str x8, [x1]
 ; CHECK-NEXT:    ret
   %tmp0 = lshr i64 %arg, 51
@@ -1165,7 +1170,8 @@ define void @c7_i64(i64 %arg, i64* %ptr) nounwind {
 ; CHECK-LABEL: c7_i64:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    ubfx x8, x0, #51, #10
-; CHECK-NEXT:    lsl x8, x8, #2
+; CHECK-NEXT:    // kill: def $w8 killed $w8 killed $x8 def $x8
+; CHECK-NEXT:    ubfiz x8, x8, #2, #32
 ; CHECK-NEXT:    str x8, [x1]
 ; CHECK-NEXT:    ret
   %tmp0 = lshr i64 %arg, 51

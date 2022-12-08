@@ -23,7 +23,7 @@ define i64 @test_set_mask_i64_i32(i64 %x) nounwind {
 ; CHECK-LABEL: test_set_mask_i64_i32:
 ; CHECK:       // %bb.0: // %entry
 ; CHECK-NEXT:    mov w8, #42
-; CHECK-NEXT:    tst x0, #0x80000000
+; CHECK-NEXT:    tst w0, #0x80000000
 ; CHECK-NEXT:    csel x0, x8, x0, ne
 ; CHECK-NEXT:    ret
 entry:
@@ -41,7 +41,7 @@ define i64 @test_clear_mask_i64_i16(i64 %x) nounwind {
 ; CHECK-LABEL: test_clear_mask_i64_i16:
 ; CHECK:       // %bb.0: // %entry
 ; CHECK-NEXT:    mov w8, #42
-; CHECK-NEXT:    tst x0, #0x8000
+; CHECK-NEXT:    tst w0, #0x8000
 ; CHECK-NEXT:    csel x0, x8, x0, eq
 ; CHECK-NEXT:    ret
 entry:
@@ -59,7 +59,7 @@ define i64 @test_set_mask_i64_i16(i64 %x) nounwind {
 ; CHECK-LABEL: test_set_mask_i64_i16:
 ; CHECK:       // %bb.0: // %entry
 ; CHECK-NEXT:    mov w8, #42
-; CHECK-NEXT:    tst x0, #0x8000
+; CHECK-NEXT:    tst w0, #0x8000
 ; CHECK-NEXT:    csel x0, x8, x0, ne
 ; CHECK-NEXT:    ret
 entry:
@@ -77,7 +77,7 @@ define i64 @test_clear_mask_i64_i8(i64 %x) nounwind {
 ; CHECK-LABEL: test_clear_mask_i64_i8:
 ; CHECK:       // %bb.0: // %entry
 ; CHECK-NEXT:    mov w8, #42
-; CHECK-NEXT:    tst x0, #0x80
+; CHECK-NEXT:    tst w0, #0x80
 ; CHECK-NEXT:    csel x0, x8, x0, eq
 ; CHECK-NEXT:    ret
 entry:
@@ -95,7 +95,7 @@ define i64 @test_set_mask_i64_i8(i64 %x) nounwind {
 ; CHECK-LABEL: test_set_mask_i64_i8:
 ; CHECK:       // %bb.0: // %entry
 ; CHECK-NEXT:    mov w8, #42
-; CHECK-NEXT:    tst x0, #0x80
+; CHECK-NEXT:    tst w0, #0x80
 ; CHECK-NEXT:    csel x0, x8, x0, ne
 ; CHECK-NEXT:    ret
 entry:

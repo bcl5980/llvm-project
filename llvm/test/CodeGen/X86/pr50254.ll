@@ -18,7 +18,7 @@ define void @PR50254() {
 ;
 ; X64-LABEL: PR50254:
 ; X64:       # %bb.0: # %entry
-; X64-NEXT:    movswq d.e(%rip), %rax
+; X64-NEXT:    movswl d.e(%rip), %eax
 ; X64-NEXT:    xorl %ecx, %ecx
 ; X64-NEXT:    testb %cl, %cl
 ; X64-NEXT:    jne .LBB0_2

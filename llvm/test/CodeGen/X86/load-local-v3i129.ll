@@ -22,9 +22,15 @@ define void @_start() nounwind {
 ; SLOW-SHLD-LABEL: _start:
 ; SLOW-SHLD:       # %bb.0: # %Entry
 ; SLOW-SHLD-NEXT:    movq -40(%rsp), %rax
+; SLOW-SHLD-NEXT:    movq -32(%rsp), %rcx
 ; SLOW-SHLD-NEXT:    andq $-4, %rax
 ; SLOW-SHLD-NEXT:    orq $1, %rax
 ; SLOW-SHLD-NEXT:    movq %rax, -40(%rsp)
+; SLOW-SHLD-NEXT:    movq %rcx, %rax
+; SLOW-SHLD-NEXT:    andq $-4, %rax
+; SLOW-SHLD-NEXT:    andl $3, %ecx
+; SLOW-SHLD-NEXT:    orq %rax, %rcx
+; SLOW-SHLD-NEXT:    movq %rcx, -32(%rsp)
 ; SLOW-SHLD-NEXT:    orq $-2, -56(%rsp)
 ; SLOW-SHLD-NEXT:    movq $-1, -48(%rsp)
 ; SLOW-SHLD-NEXT:    retq

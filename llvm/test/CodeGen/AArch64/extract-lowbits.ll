@@ -703,7 +703,7 @@ define i64 @bzhi64_constant_mask64_load(i64* %val) nounwind {
 define i64 @bzhi64_constant_mask32(i64 %val) nounwind {
 ; CHECK-LABEL: bzhi64_constant_mask32:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    and x0, x0, #0x7fffffff
+; CHECK-NEXT:    and w0, w0, #0x7fffffff
 ; CHECK-NEXT:    ret
   %masked = and i64 %val, 2147483647
   ret i64 %masked
@@ -712,8 +712,8 @@ define i64 @bzhi64_constant_mask32(i64 %val) nounwind {
 define i64 @bzhi64_constant_mask32_load(i64* %val) nounwind {
 ; CHECK-LABEL: bzhi64_constant_mask32_load:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    ldr x8, [x0]
-; CHECK-NEXT:    and x0, x8, #0x7fffffff
+; CHECK-NEXT:    ldr w8, [x0]
+; CHECK-NEXT:    and w0, w8, #0x7fffffff
 ; CHECK-NEXT:    ret
   %val1 = load i64, i64* %val
   %masked = and i64 %val1, 2147483647
@@ -723,7 +723,7 @@ define i64 @bzhi64_constant_mask32_load(i64* %val) nounwind {
 define i64 @bzhi64_constant_mask16(i64 %val) nounwind {
 ; CHECK-LABEL: bzhi64_constant_mask16:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    and x0, x0, #0x7fff
+; CHECK-NEXT:    and w0, w0, #0x7fff
 ; CHECK-NEXT:    ret
   %masked = and i64 %val, 32767
   ret i64 %masked
@@ -732,8 +732,8 @@ define i64 @bzhi64_constant_mask16(i64 %val) nounwind {
 define i64 @bzhi64_constant_mask16_load(i64* %val) nounwind {
 ; CHECK-LABEL: bzhi64_constant_mask16_load:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    ldr x8, [x0]
-; CHECK-NEXT:    and x0, x8, #0x7fff
+; CHECK-NEXT:    ldr w8, [x0]
+; CHECK-NEXT:    and w0, w8, #0x7fff
 ; CHECK-NEXT:    ret
   %val1 = load i64, i64* %val
   %masked = and i64 %val1, 32767
@@ -743,7 +743,7 @@ define i64 @bzhi64_constant_mask16_load(i64* %val) nounwind {
 define i64 @bzhi64_constant_mask8(i64 %val) nounwind {
 ; CHECK-LABEL: bzhi64_constant_mask8:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    and x0, x0, #0x7f
+; CHECK-NEXT:    and w0, w0, #0x7f
 ; CHECK-NEXT:    ret
   %masked = and i64 %val, 127
   ret i64 %masked
@@ -752,8 +752,8 @@ define i64 @bzhi64_constant_mask8(i64 %val) nounwind {
 define i64 @bzhi64_constant_mask8_load(i64* %val) nounwind {
 ; CHECK-LABEL: bzhi64_constant_mask8_load:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    ldr x8, [x0]
-; CHECK-NEXT:    and x0, x8, #0x7f
+; CHECK-NEXT:    ldr w8, [x0]
+; CHECK-NEXT:    and w0, w8, #0x7f
 ; CHECK-NEXT:    ret
   %val1 = load i64, i64* %val
   %masked = and i64 %val1, 127

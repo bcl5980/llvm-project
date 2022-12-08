@@ -10,10 +10,10 @@ define [1 x i64] @from_clang([1 x i64] %f.coerce, i32 %n) nounwind readnone {
 ; CHECK-LABEL: from_clang:
 ; CHECK:       // %bb.0: // %entry
 ; CHECK-NEXT:    mov w8, #135
-; CHECK-NEXT:    and x9, x0, #0xffffff00
+; CHECK-NEXT:    and w9, w0, #0xffffff00
 ; CHECK-NEXT:    and w8, w0, w8
 ; CHECK-NEXT:    bfi w8, w1, #3, #4
-; CHECK-NEXT:    orr x0, x8, x9
+; CHECK-NEXT:    orr w0, w8, w9
 ; CHECK-NEXT:    ret
 entry:
   %f.coerce.fca.0.extract = extractvalue [1 x i64] %f.coerce, 0
@@ -76,8 +76,8 @@ define void @test_whole32_from64(i64* %existing, i64* %new) {
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    ldr x8, [x0]
 ; CHECK-NEXT:    ldr x9, [x1]
-; CHECK-NEXT:    and x8, x8, #0xffff0000
-; CHECK-NEXT:    bfxil x8, x9, #0, #16
+; CHECK-NEXT:    // kill: def $w8 killed $w8 killed $x8 def $x8
+; CHECK-NEXT:    bfxil w8, w9, #0, #16
 ; CHECK-NEXT:    str x8, [x0]
 ; CHECK-NEXT:    ret
   %oldval = load volatile i64, i64* %existing
@@ -191,14 +191,13 @@ define void @test_32bit_badmask(i32 *%existing, i32 *%new) {
 define void @test_64bit_badmask(i64 *%existing, i64 *%new) {
 ; CHECK-LABEL: test_64bit_badmask:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    ldr x9, [x0]
-; CHECK-NEXT:    mov w8, #135
-; CHECK-NEXT:    ldr x10, [x1]
+; CHECK-NEXT:    ldr x8, [x0]
+; CHECK-NEXT:    mov w10, #135
+; CHECK-NEXT:    ldr x9, [x1]
 ; CHECK-NEXT:    mov w11, #664
-; CHECK-NEXT:    and x8, x9, x8
-; CHECK-NEXT:    lsl w10, w10, #3
-; CHECK-NEXT:    and x9, x10, x11
-; CHECK-NEXT:    orr x8, x8, x9
+; CHECK-NEXT:    and w8, w8, w10
+; CHECK-NEXT:    and w9, w11, w9, lsl #3
+; CHECK-NEXT:    orr w8, w8, w9
 ; CHECK-NEXT:    str x8, [x0]
 ; CHECK-NEXT:    ret
   %oldval = load volatile i64, i64* %existing
@@ -579,8 +578,9 @@ define <2 x i32> @test_complex_type(<2 x i32>* %addr, i64 %in, i64* %bf ) {
 define i64 @test_truncated_shift(i64 %x, i64 %y) {
 ; CHECK-LABEL: test_truncated_shift:
 ; CHECK:       // %bb.0: // %entry
-; CHECK-NEXT:    // kill: def $w1 killed $w1 killed $x1 def $x1
-; CHECK-NEXT:    bfi x0, x1, #25, #5
+; CHECK-NEXT:    and x8, x0, #0xffffffffc1ffffff
+; CHECK-NEXT:    ubfiz w9, w1, #25, #5
+; CHECK-NEXT:    orr x0, x9, x8
 ; CHECK-NEXT:    ret
 entry:
   %and = and i64 %x, -1040187393
@@ -593,8 +593,7 @@ entry:
 define i64 @test_and_extended_shift_with_imm(i64 %0) {
 ; CHECK-LABEL: test_and_extended_shift_with_imm:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    // kill: def $w0 killed $w0 killed $x0 def $x0
-; CHECK-NEXT:    ubfiz x0, x0, #7, #8
+; CHECK-NEXT:    ubfiz w0, w0, #7, #8
 ; CHECK-NEXT:    ret
   %2 = shl i64 %0, 7
   %3 = and i64 %2, 32640  ; #0x7f80
@@ -611,9 +610,9 @@ define i64 @test_and_extended_shift_with_imm(i64 %0) {
 define i64 @test_orr_not_bfxil_i64(i64 %0) {
 ; CHECK-LABEL: test_orr_not_bfxil_i64:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    ubfx x8, x0, #8, #7
-; CHECK-NEXT:    and x9, x0, #0x7f
-; CHECK-NEXT:    orr x0, x9, x8, lsl #7
+; CHECK-NEXT:    ubfx w8, w0, #8, #7
+; CHECK-NEXT:    and w9, w0, #0x7f
+; CHECK-NEXT:    orr w0, w9, w8, lsl #7
 ; CHECK-NEXT:    ret
   %2 = and i64 %0, 127
   %3 = lshr i64 %0, 1
@@ -686,8 +685,9 @@ define i32 @test_orr_not_bfi_i32(i32 %0) {
 define i64 @test_bfxil_not_orr_i64(i64 %0, i64 %1) {
 ; CHECK-LABEL: test_bfxil_not_orr_i64:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    and x0, x0, #0xff000
-; CHECK-NEXT:    bfxil x0, x1, #12, #8
+; CHECK-NEXT:    and w8, w1, #0xff000
+; CHECK-NEXT:    and w9, w0, #0xff000
+; CHECK-NEXT:    orr x0, x9, x8, lsr #12
 ; CHECK-NEXT:    ret
   %shifted-mask = and i64 %1, 1044480
   %bfi-dst = and i64 %0, 1044480

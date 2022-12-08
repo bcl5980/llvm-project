@@ -464,9 +464,8 @@ define void @memset_10(i8* %dst, i32 %value) {
 ;
 ; SDAG-WITHOUT-MOPS-O2-LABEL: memset_10:
 ; SDAG-WITHOUT-MOPS-O2:       // %bb.0: // %entry
-; SDAG-WITHOUT-MOPS-O2-NEXT:    // kill: def $w1 killed $w1 def $x1
 ; SDAG-WITHOUT-MOPS-O2-NEXT:    mov x8, #72340172838076673
-; SDAG-WITHOUT-MOPS-O2-NEXT:    and x9, x1, #0xff
+; SDAG-WITHOUT-MOPS-O2-NEXT:    and w9, w1, #0xff
 ; SDAG-WITHOUT-MOPS-O2-NEXT:    mul x8, x9, x8
 ; SDAG-WITHOUT-MOPS-O2-NEXT:    str x8, [x0]
 ; SDAG-WITHOUT-MOPS-O2-NEXT:    strh w8, [x0, #8]
@@ -474,9 +473,8 @@ define void @memset_10(i8* %dst, i32 %value) {
 ;
 ; SDAG-MOPS-O2-LABEL: memset_10:
 ; SDAG-MOPS-O2:       // %bb.0: // %entry
-; SDAG-MOPS-O2-NEXT:    // kill: def $w1 killed $w1 def $x1
 ; SDAG-MOPS-O2-NEXT:    mov x8, #72340172838076673
-; SDAG-MOPS-O2-NEXT:    and x9, x1, #0xff
+; SDAG-MOPS-O2-NEXT:    and w9, w1, #0xff
 ; SDAG-MOPS-O2-NEXT:    mul x8, x9, x8
 ; SDAG-MOPS-O2-NEXT:    str x8, [x0]
 ; SDAG-MOPS-O2-NEXT:    strh w8, [x0, #8]
@@ -531,9 +529,8 @@ define void @memset_10_volatile(i8* %dst, i32 %value) {
 ;
 ; SDAG-WITHOUT-MOPS-O2-LABEL: memset_10_volatile:
 ; SDAG-WITHOUT-MOPS-O2:       // %bb.0: // %entry
-; SDAG-WITHOUT-MOPS-O2-NEXT:    // kill: def $w1 killed $w1 def $x1
 ; SDAG-WITHOUT-MOPS-O2-NEXT:    mov x8, #72340172838076673
-; SDAG-WITHOUT-MOPS-O2-NEXT:    and x9, x1, #0xff
+; SDAG-WITHOUT-MOPS-O2-NEXT:    and w9, w1, #0xff
 ; SDAG-WITHOUT-MOPS-O2-NEXT:    mul x8, x9, x8
 ; SDAG-WITHOUT-MOPS-O2-NEXT:    str x8, [x0]
 ; SDAG-WITHOUT-MOPS-O2-NEXT:    strh w8, [x0, #8]
@@ -541,9 +538,8 @@ define void @memset_10_volatile(i8* %dst, i32 %value) {
 ;
 ; SDAG-MOPS-O2-LABEL: memset_10_volatile:
 ; SDAG-MOPS-O2:       // %bb.0: // %entry
-; SDAG-MOPS-O2-NEXT:    // kill: def $w1 killed $w1 def $x1
 ; SDAG-MOPS-O2-NEXT:    mov x8, #72340172838076673
-; SDAG-MOPS-O2-NEXT:    and x9, x1, #0xff
+; SDAG-MOPS-O2-NEXT:    and w9, w1, #0xff
 ; SDAG-MOPS-O2-NEXT:    mul x8, x9, x8
 ; SDAG-MOPS-O2-NEXT:    str x8, [x0]
 ; SDAG-MOPS-O2-NEXT:    strh w8, [x0, #8]

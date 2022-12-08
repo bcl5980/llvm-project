@@ -12649,13 +12649,17 @@ SDValue DAGCombiner::visitZERO_EXTEND(SDNode *N) {
     }
 
     if (!LegalOperations || TLI.isOperationLegal(ISD::AND, VT)) {
-      SDValue Op = DAG.getAnyExtOrTrunc(N0.getOperand(0), SDLoc(N), VT);
-      AddToWorklist(Op.getNode());
-      SDValue And = DAG.getZeroExtendInReg(Op, SDLoc(N), MinVT);
-      // We may safely transfer the debug info describing the truncate node over
-      // to the equivalent and operation.
-      DAG.transferDbgValues(N0, And);
-      return And;
+      if (!TLI.isTruncateFree(N0.getOperand(0).getValueType(),
+                              N0.getValueType()) ||
+          !TLI.isZExtFree(N0.getValueType(), VT)) {
+        SDValue Op = DAG.getAnyExtOrTrunc(N0.getOperand(0), SDLoc(N), VT);
+        AddToWorklist(Op.getNode());
+        SDValue And = DAG.getZeroExtendInReg(Op, SDLoc(N), MinVT);
+        // We may safely transfer the debug info describing the truncate node
+        // over to the equivalent and operation.
+        DAG.transferDbgValues(N0, And);
+        return And;
+      }
     }
   }
 

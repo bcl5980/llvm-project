@@ -25,7 +25,7 @@ define i64 @cttzi64(i64 %x) {
 ; CHECK:       // %bb.0: // %entry
 ; CHECK-NEXT:    rbit x8, x0
 ; CHECK-NEXT:    clz x8, x8
-; CHECK-NEXT:    and x0, x8, #0x3f
+; CHECK-NEXT:    and w0, w8, #0x3f
 ; CHECK-NEXT:    ret
 entry:
   %0 = call i64 @llvm.cttz.i64(i64 %x, i1 true)
@@ -53,7 +53,7 @@ define i64 @cttzi64ne(i64 %x) {
 ; CHECK:       // %bb.0: // %entry
 ; CHECK-NEXT:    rbit x8, x0
 ; CHECK-NEXT:    clz x8, x8
-; CHECK-NEXT:    and x0, x8, #0x3f
+; CHECK-NEXT:    and w0, w8, #0x3f
 ; CHECK-NEXT:    ret
 entry:
   %0 = call i64 @llvm.cttz.i64(i64 %x, i1 true)

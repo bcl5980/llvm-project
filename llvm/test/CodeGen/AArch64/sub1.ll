@@ -5,8 +5,8 @@ define i64 @sub1_disguised_constant(i64 %x) {
 ; CHECK-LABEL: sub1_disguised_constant:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    sub w8, w0, #1
-; CHECK-NEXT:    and w8, w0, w8
-; CHECK-NEXT:    and x0, x8, #0xffff
+; CHECK-NEXT:    and x8, x0, x8
+; CHECK-NEXT:    and w0, w8, #0xffff
 ; CHECK-NEXT:    ret
   %a1 = and i64 %x, 65535
   %a2 = add i64 %x, 65535

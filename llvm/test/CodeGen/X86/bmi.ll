@@ -1186,7 +1186,8 @@ define i64 @blsr_disguised_constant(i64 %x) {
 ;
 ; X64-LABEL: blsr_disguised_constant:
 ; X64:       # %bb.0:
-; X64-NEXT:    blsrl %edi, %eax
+; X64-NEXT:    leal -1(%rdi), %eax
+; X64-NEXT:    andq %rdi, %rax
 ; X64-NEXT:    movzwl %ax, %eax
 ; X64-NEXT:    retq
   %a1 = and i64 %x, 65535

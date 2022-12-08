@@ -561,9 +561,10 @@ no:
 define i64 @is_upper_bit_clear_i64(i64 %x) {
 ; CHECK-LABEL: is_upper_bit_clear_i64:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    xorl %eax, %eax
-; CHECK-NEXT:    btq $37, %rdi
-; CHECK-NEXT:    setae %al
+; CHECK-NEXT:    movq %rdi, %rax
+; CHECK-NEXT:    notq %rax
+; CHECK-NEXT:    shrq $37, %rax
+; CHECK-NEXT:    andl $1, %eax
 ; CHECK-NEXT:    retq
   %sh = lshr i64 %x, 37
   %m = and i64 %sh, 1
@@ -574,9 +575,10 @@ define i64 @is_upper_bit_clear_i64(i64 %x) {
 define i64 @is_upper_bit_clear_i64_not(i64 %x) {
 ; CHECK-LABEL: is_upper_bit_clear_i64_not:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    xorl %eax, %eax
-; CHECK-NEXT:    btq $39, %rdi
-; CHECK-NEXT:    setae %al
+; CHECK-NEXT:    movq %rdi, %rax
+; CHECK-NEXT:    notq %rax
+; CHECK-NEXT:    shrq $39, %rax
+; CHECK-NEXT:    andl $1, %eax
 ; CHECK-NEXT:    retq
   %n = xor i64 %x, -1
   %sh = lshr i64 %n, 39

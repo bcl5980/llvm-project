@@ -141,7 +141,7 @@ define amdgpu_kernel void @v_uextract_bit_34_100_i128(ptr addrspace(1) %out, ptr
 ; GCN-NEXT:    s_mov_b64 s[4:5], s[2:3]
 ; GCN-NEXT:    buffer_load_dwordx4 v[0:3], v[8:9], s[4:7], 0 addr64
 ; GCN-NEXT:    s_mov_b64 s[2:3], s[6:7]
-; GCN-NEXT:    v_mov_b32_e32 v7, v9
+; GCN-NEXT:    v_mov_b32_e32 v7, 0
 ; GCN-NEXT:    s_waitcnt vmcnt(0)
 ; GCN-NEXT:    v_lshl_b64 v[4:5], v[2:3], 30
 ; GCN-NEXT:    v_lshrrev_b32_e32 v0, 2, v1

@@ -420,8 +420,9 @@ define void @testRightBad2x64(<2 x i64> %src1, <2 x i64> %src2, <2 x i64>* %dest
 define void @testLeftShouldNotCreateSLI1x128(<1 x i128> %src1, <1 x i128> %src2, <1 x i128>* %dest) nounwind {
 ; CHECK-LABEL: testLeftShouldNotCreateSLI1x128:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    bfi x1, x2, #6, #58
-; CHECK-NEXT:    stp x0, x1, [x4]
+; CHECK-NEXT:    and w8, w1, #0x3f
+; CHECK-NEXT:    orr x8, x8, x2, lsl #6
+; CHECK-NEXT:    stp x0, x8, [x4]
 ; CHECK-NEXT:    ret
   %and.i = and <1 x i128> %src1, <i128 1180591620717411303423>
   %vshl_n = shl <1 x i128> %src2, <i128 70>

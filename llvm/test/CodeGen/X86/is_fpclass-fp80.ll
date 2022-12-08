@@ -241,7 +241,7 @@ define i1 @is_negzero_f80(x86_fp80 %x) {
 ; CHECK-64-LABEL: is_negzero_f80:
 ; CHECK-64:       # %bb.0: # %entry
 ; CHECK-64-NEXT:    movzwl {{[0-9]+}}(%rsp), %eax
-; CHECK-64-NEXT:    xorq $32768, %rax # imm = 0x8000
+; CHECK-64-NEXT:    xorl $32768, %eax # imm = 0x8000
 ; CHECK-64-NEXT:    orq {{[0-9]+}}(%rsp), %rax
 ; CHECK-64-NEXT:    sete %al
 ; CHECK-64-NEXT:    retq
@@ -265,12 +265,12 @@ define i1 @is_inf_f80(x86_fp80 %x) {
 ;
 ; CHECK-64-LABEL: is_inf_f80:
 ; CHECK-64:       # %bb.0: # %entry
-; CHECK-64-NEXT:    movl {{[0-9]+}}(%rsp), %eax
+; CHECK-64-NEXT:    movzwl {{[0-9]+}}(%rsp), %eax
 ; CHECK-64-NEXT:    notl %eax
-; CHECK-64-NEXT:    andl $32767, %eax # imm = 0x7FFF
 ; CHECK-64-NEXT:    movabsq $-9223372036854775808, %rcx # imm = 0x8000000000000000
 ; CHECK-64-NEXT:    xorq {{[0-9]+}}(%rsp), %rcx
-; CHECK-64-NEXT:    orq %rax, %rcx
+; CHECK-64-NEXT:    andl $32767, %eax # imm = 0x7FFF
+; CHECK-64-NEXT:    orq %rcx, %rax
 ; CHECK-64-NEXT:    sete %al
 ; CHECK-64-NEXT:    retq
 entry:
@@ -295,7 +295,7 @@ define i1 @is_posinf_f80(x86_fp80 %x) {
 ; CHECK-64-NEXT:    movzwl {{[0-9]+}}(%rsp), %eax
 ; CHECK-64-NEXT:    movabsq $-9223372036854775808, %rcx # imm = 0x8000000000000000
 ; CHECK-64-NEXT:    xorq {{[0-9]+}}(%rsp), %rcx
-; CHECK-64-NEXT:    xorq $32767, %rax # imm = 0x7FFF
+; CHECK-64-NEXT:    xorl $32767, %eax # imm = 0x7FFF
 ; CHECK-64-NEXT:    orq %rcx, %rax
 ; CHECK-64-NEXT:    sete %al
 ; CHECK-64-NEXT:    retq
@@ -318,12 +318,11 @@ define i1 @is_neginf_f80(x86_fp80 %x) {
 ;
 ; CHECK-64-LABEL: is_neginf_f80:
 ; CHECK-64:       # %bb.0: # %entry
-; CHECK-64-NEXT:    movl {{[0-9]+}}(%rsp), %eax
-; CHECK-64-NEXT:    notl %eax
-; CHECK-64-NEXT:    movzwl %ax, %eax
+; CHECK-64-NEXT:    movzwl {{[0-9]+}}(%rsp), %eax
 ; CHECK-64-NEXT:    movabsq $-9223372036854775808, %rcx # imm = 0x8000000000000000
 ; CHECK-64-NEXT:    xorq {{[0-9]+}}(%rsp), %rcx
-; CHECK-64-NEXT:    orq %rax, %rcx
+; CHECK-64-NEXT:    xorl $65535, %eax # imm = 0xFFFF
+; CHECK-64-NEXT:    orq %rcx, %rax
 ; CHECK-64-NEXT:    sete %al
 ; CHECK-64-NEXT:    retq
 entry:
@@ -487,14 +486,14 @@ define i1 @is_subnormal_f80(x86_fp80 %x) {
 ;
 ; CHECK-64-LABEL: is_subnormal_f80:
 ; CHECK-64:       # %bb.0: # %entry
-; CHECK-64-NEXT:    movzwl {{[0-9]+}}(%rsp), %eax
-; CHECK-64-NEXT:    movq {{[0-9]+}}(%rsp), %rcx
-; CHECK-64-NEXT:    andl $32767, %eax # imm = 0x7FFF
-; CHECK-64-NEXT:    addq $-1, %rcx
-; CHECK-64-NEXT:    adcq $-1, %rax
+; CHECK-64-NEXT:    movq {{[0-9]+}}(%rsp), %rax
+; CHECK-64-NEXT:    movzwl {{[0-9]+}}(%rsp), %ecx
+; CHECK-64-NEXT:    andl $32767, %ecx # imm = 0x7FFF
+; CHECK-64-NEXT:    addq $-1, %rax
+; CHECK-64-NEXT:    adcq $-1, %rcx
 ; CHECK-64-NEXT:    movabsq $9223372036854775807, %rdx # imm = 0x7FFFFFFFFFFFFFFF
-; CHECK-64-NEXT:    cmpq %rdx, %rcx
-; CHECK-64-NEXT:    sbbq $0, %rax
+; CHECK-64-NEXT:    cmpq %rdx, %rax
+; CHECK-64-NEXT:    sbbq $0, %rcx
 ; CHECK-64-NEXT:    setb %al
 ; CHECK-64-NEXT:    retq
 entry:
@@ -530,7 +529,7 @@ define i1 @is_possubnormal_f80(x86_fp80 %x) {
 ; CHECK-64-NEXT:    movl {{[0-9]+}}(%rsp), %eax
 ; CHECK-64-NEXT:    movq {{[0-9]+}}(%rsp), %rcx
 ; CHECK-64-NEXT:    addq $-1, %rcx
-; CHECK-64-NEXT:    adcq $-1, %rax
+; CHECK-64-NEXT:    adcl $-1, %eax
 ; CHECK-64-NEXT:    movzwl %ax, %eax
 ; CHECK-64-NEXT:    movabsq $9223372036854775807, %rdx # imm = 0x7FFFFFFFFFFFFFFF
 ; CHECK-64-NEXT:    cmpq %rdx, %rcx
@@ -578,15 +577,15 @@ define i1 @is_negsubnormal_f80(x86_fp80 %x) {
 ;
 ; CHECK-64-LABEL: is_negsubnormal_f80:
 ; CHECK-64:       # %bb.0: # %entry
-; CHECK-64-NEXT:    movzwl {{[0-9]+}}(%rsp), %eax
-; CHECK-64-NEXT:    movswq %ax, %rcx
-; CHECK-64-NEXT:    movq {{[0-9]+}}(%rsp), %rdx
-; CHECK-64-NEXT:    andl $32767, %eax # imm = 0x7FFF
-; CHECK-64-NEXT:    addq $-1, %rdx
-; CHECK-64-NEXT:    adcq $-1, %rax
+; CHECK-64-NEXT:    movq {{[0-9]+}}(%rsp), %rax
+; CHECK-64-NEXT:    movswq {{[0-9]+}}(%rsp), %rcx
+; CHECK-64-NEXT:    movl %ecx, %edx
+; CHECK-64-NEXT:    andl $32767, %edx # imm = 0x7FFF
+; CHECK-64-NEXT:    addq $-1, %rax
+; CHECK-64-NEXT:    adcq $-1, %rdx
 ; CHECK-64-NEXT:    movabsq $9223372036854775807, %rsi # imm = 0x7FFFFFFFFFFFFFFF
-; CHECK-64-NEXT:    cmpq %rsi, %rdx
-; CHECK-64-NEXT:    sbbq $0, %rax
+; CHECK-64-NEXT:    cmpq %rsi, %rax
+; CHECK-64-NEXT:    sbbq $0, %rdx
 ; CHECK-64-NEXT:    setb %dl
 ; CHECK-64-NEXT:    testq %rcx, %rcx
 ; CHECK-64-NEXT:    sets %al

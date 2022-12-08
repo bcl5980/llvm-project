@@ -68,7 +68,7 @@ define i64 @ror_extract_mul_with_mask(i64 %i) nounwind {
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    add x8, x0, x0, lsl #3
 ; CHECK-NEXT:    ror x8, x8, #57
-; CHECK-NEXT:    and x0, x8, #0xff
+; CHECK-NEXT:    and w0, w8, #0xff
 ; CHECK-NEXT:    ret
   %lhs_mul = mul i64 %i, 1152
   %rhs_mul = mul i64 %i, 9

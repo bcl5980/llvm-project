@@ -9096,10 +9096,10 @@ define i8 @load_single_extract_variable_index_i8(<16 x i8>* %A, i32 %idx) {
 ; CHECK:       ; %bb.0:
 ; CHECK-NEXT:    sub sp, sp, #16
 ; CHECK-NEXT:    .cfi_def_cfa_offset 16
-; CHECK-NEXT:    mov x8, sp
+; CHECK-NEXT:    and w8, w1, #0xf
 ; CHECK-NEXT:    ldr q0, [x0]
-; CHECK-NEXT:    ; kill: def $w1 killed $w1 def $x1
-; CHECK-NEXT:    bfxil x8, x1, #0, #4
+; CHECK-NEXT:    mov x9, sp
+; CHECK-NEXT:    orr x8, x9, x8
 ; CHECK-NEXT:    str q0, [sp]
 ; CHECK-NEXT:    ldrb w0, [x8]
 ; CHECK-NEXT:    add sp, sp, #16
@@ -9114,10 +9114,10 @@ define i16 @load_single_extract_variable_index_i16(<8 x i16>* %A, i32 %idx) {
 ; CHECK:       ; %bb.0:
 ; CHECK-NEXT:    sub sp, sp, #16
 ; CHECK-NEXT:    .cfi_def_cfa_offset 16
-; CHECK-NEXT:    mov x8, sp
+; CHECK-NEXT:    and w8, w1, #0x7
 ; CHECK-NEXT:    ldr q0, [x0]
-; CHECK-NEXT:    ; kill: def $w1 killed $w1 def $x1
-; CHECK-NEXT:    bfi x8, x1, #1, #3
+; CHECK-NEXT:    mov x9, sp
+; CHECK-NEXT:    orr x8, x9, x8, lsl #1
 ; CHECK-NEXT:    str q0, [sp]
 ; CHECK-NEXT:    ldrh w0, [x8]
 ; CHECK-NEXT:    add sp, sp, #16
@@ -9130,9 +9130,8 @@ define i16 @load_single_extract_variable_index_i16(<8 x i16>* %A, i32 %idx) {
 define i32 @load_single_extract_variable_index_i32(<4 x i32>* %A, i32 %idx) {
 ; CHECK-LABEL: load_single_extract_variable_index_i32:
 ; CHECK:       ; %bb.0:
-; CHECK-NEXT:    ; kill: def $w1 killed $w1 def $x1
-; CHECK-NEXT:    and x8, x1, #0x3
-; CHECK-NEXT:    ldr w0, [x0, x8, lsl #2]
+; CHECK-NEXT:    and w8, w1, #0x3
+; CHECK-NEXT:    ldr w0, [x0, w8, uxtw #2]
 ; CHECK-NEXT:    ret
   %lv = load <4 x i32>, <4 x i32>* %A
   %e = extractelement <4 x i32> %lv, i32 %idx

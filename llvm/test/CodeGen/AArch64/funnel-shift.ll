@@ -19,9 +19,9 @@ declare <4 x i32> @llvm.fshr.v4i32(<4 x i32>, <4 x i32>, <4 x i32>)
 define i32 @fshl_i32(i32 %x, i32 %y, i32 %z) {
 ; CHECK-LABEL: fshl_i32:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    // kill: def $w2 killed $w2 def $x2
-; CHECK-NEXT:    mvn w8, w2
+; CHECK-NEXT:    mov w8, w2
 ; CHECK-NEXT:    lsr w9, w1, #1
+; CHECK-NEXT:    mvn x8, x8
 ; CHECK-NEXT:    lsl w10, w0, w2
 ; CHECK-NEXT:    lsr w8, w9, w8
 ; CHECK-NEXT:    orr w0, w10, w8
@@ -33,8 +33,10 @@ define i32 @fshl_i32(i32 %x, i32 %y, i32 %z) {
 define i64 @fshl_i64(i64 %x, i64 %y, i64 %z) {
 ; CHECK-LABEL: fshl_i64:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    mvn w8, w2
+; CHECK-NEXT:    mvn x8, x2
 ; CHECK-NEXT:    lsr x9, x1, #1
+; CHECK-NEXT:    // kill: def $w8 killed $w8 killed $x8 def $x8
+; CHECK-NEXT:    // kill: def $w2 killed $w2 killed $x2 def $x2
 ; CHECK-NEXT:    lsl x10, x0, x2
 ; CHECK-NEXT:    lsr x8, x9, x8
 ; CHECK-NEXT:    orr x0, x10, x8
@@ -46,8 +48,8 @@ define i64 @fshl_i64(i64 %x, i64 %y, i64 %z) {
 define i128 @fshl_i128(i128 %x, i128 %y, i128 %z) nounwind {
 ; CHECK-LABEL: fshl_i128:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    tst x4, #0x40
-; CHECK-NEXT:    mvn w8, w4
+; CHECK-NEXT:    tst w4, #0x40
+; CHECK-NEXT:    mvn x8, x4
 ; CHECK-NEXT:    csel x9, x2, x3, ne
 ; CHECK-NEXT:    csel x10, x3, x0, ne
 ; CHECK-NEXT:    lsr x9, x9, #1
@@ -79,7 +81,8 @@ define i37 @fshl_i37(i37 %x, i37 %y, i37 %z) {
 ; CHECK-NEXT:    mov w9, #37
 ; CHECK-NEXT:    ubfx x8, x8, #5, #27
 ; CHECK-NEXT:    msub w8, w8, w9, w2
-; CHECK-NEXT:    mvn w9, w8
+; CHECK-NEXT:    mvn x9, x8
+; CHECK-NEXT:    // kill: def $w9 killed $w9 killed $x9 def $x9
 ; CHECK-NEXT:    lsl x8, x0, x8
 ; CHECK-NEXT:    lsr x9, x10, x9
 ; CHECK-NEXT:    orr x0, x8, x9
@@ -178,9 +181,9 @@ define i8 @fshl_i8_const_fold() {
 define i32 @fshr_i32(i32 %x, i32 %y, i32 %z) {
 ; CHECK-LABEL: fshr_i32:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    // kill: def $w2 killed $w2 def $x2
-; CHECK-NEXT:    mvn w8, w2
+; CHECK-NEXT:    mov w8, w2
 ; CHECK-NEXT:    lsl w9, w0, #1
+; CHECK-NEXT:    mvn x8, x8
 ; CHECK-NEXT:    lsr w10, w1, w2
 ; CHECK-NEXT:    lsl w8, w9, w8
 ; CHECK-NEXT:    orr w0, w8, w10
@@ -192,8 +195,10 @@ define i32 @fshr_i32(i32 %x, i32 %y, i32 %z) {
 define i64 @fshr_i64(i64 %x, i64 %y, i64 %z) {
 ; CHECK-LABEL: fshr_i64:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    mvn w8, w2
+; CHECK-NEXT:    mvn x8, x2
 ; CHECK-NEXT:    lsl x9, x0, #1
+; CHECK-NEXT:    // kill: def $w8 killed $w8 killed $x8 def $x8
+; CHECK-NEXT:    // kill: def $w2 killed $w2 killed $x2 def $x2
 ; CHECK-NEXT:    lsr x10, x1, x2
 ; CHECK-NEXT:    lsl x8, x9, x8
 ; CHECK-NEXT:    orr x0, x8, x10
@@ -219,7 +224,8 @@ define i37 @fshr_i37(i37 %x, i37 %y, i37 %z) {
 ; CHECK-NEXT:    lsr x8, x8, #5
 ; CHECK-NEXT:    msub w8, w8, w9, w2
 ; CHECK-NEXT:    add w8, w8, #27
-; CHECK-NEXT:    mvn w9, w8
+; CHECK-NEXT:    mvn x9, x8
+; CHECK-NEXT:    // kill: def $w9 killed $w9 killed $x9 def $x9
 ; CHECK-NEXT:    lsr x8, x10, x8
 ; CHECK-NEXT:    lsl x9, x11, x9
 ; CHECK-NEXT:    orr x0, x9, x8
@@ -349,13 +355,13 @@ define i32 @or_shl_fshl(i32 %x, i32 %y, i32 %s) {
 ; CHECK-LABEL: or_shl_fshl:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    mov w8, w2
-; CHECK-NEXT:    mvn w9, w2
-; CHECK-NEXT:    lsr w10, w1, #1
-; CHECK-NEXT:    lsr w9, w10, w9
-; CHECK-NEXT:    lsl w8, w0, w8
-; CHECK-NEXT:    lsl w10, w1, w2
-; CHECK-NEXT:    orr w8, w8, w9
-; CHECK-NEXT:    orr w0, w8, w10
+; CHECK-NEXT:    lsl w9, w1, w2
+; CHECK-NEXT:    mvn x8, x8
+; CHECK-NEXT:    lsl w10, w0, w2
+; CHECK-NEXT:    lsr w11, w1, #1
+; CHECK-NEXT:    orr w9, w10, w9
+; CHECK-NEXT:    lsr w8, w11, w8
+; CHECK-NEXT:    orr w0, w9, w8
 ; CHECK-NEXT:    ret
   %shy = shl i32 %y, %s
   %fun = call i32 @llvm.fshl.i32(i32 %x, i32 %y, i32 %s)
@@ -381,13 +387,13 @@ define i32 @or_shl_fshl_commute(i32 %x, i32 %y, i32 %s) {
 ; CHECK-LABEL: or_shl_fshl_commute:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    mov w8, w2
-; CHECK-NEXT:    mvn w9, w2
-; CHECK-NEXT:    lsr w10, w1, #1
-; CHECK-NEXT:    lsr w9, w10, w9
-; CHECK-NEXT:    lsl w8, w0, w8
-; CHECK-NEXT:    lsl w10, w1, w2
-; CHECK-NEXT:    orr w8, w8, w9
-; CHECK-NEXT:    orr w0, w10, w8
+; CHECK-NEXT:    lsl w9, w1, w2
+; CHECK-NEXT:    mvn x8, x8
+; CHECK-NEXT:    lsl w10, w0, w2
+; CHECK-NEXT:    lsr w11, w1, #1
+; CHECK-NEXT:    orr w9, w9, w10
+; CHECK-NEXT:    lsr w8, w11, w8
+; CHECK-NEXT:    orr w0, w9, w8
 ; CHECK-NEXT:    ret
   %shy = shl i32 %y, %s
   %fun = call i32 @llvm.fshl.i32(i32 %x, i32 %y, i32 %s)
@@ -413,13 +419,13 @@ define i32 @or_lshr_fshr(i32 %x, i32 %y, i32 %s) {
 ; CHECK-LABEL: or_lshr_fshr:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    mov w8, w2
-; CHECK-NEXT:    mvn w9, w2
-; CHECK-NEXT:    lsl w10, w1, #1
-; CHECK-NEXT:    lsr w8, w0, w8
-; CHECK-NEXT:    lsl w9, w10, w9
-; CHECK-NEXT:    lsr w10, w1, w2
-; CHECK-NEXT:    orr w8, w9, w8
-; CHECK-NEXT:    orr w0, w8, w10
+; CHECK-NEXT:    lsr w9, w1, w2
+; CHECK-NEXT:    mvn x8, x8
+; CHECK-NEXT:    lsr w10, w0, w2
+; CHECK-NEXT:    lsl w11, w1, #1
+; CHECK-NEXT:    orr w9, w10, w9
+; CHECK-NEXT:    lsl w8, w11, w8
+; CHECK-NEXT:    orr w0, w8, w9
 ; CHECK-NEXT:    ret
   %shy = lshr i32 %y, %s
   %fun = call i32 @llvm.fshr.i32(i32 %y, i32 %x, i32 %s)
@@ -444,13 +450,13 @@ define i32 @or_lshr_fshr_commute(i32 %x, i32 %y, i32 %s) {
 ; CHECK-LABEL: or_lshr_fshr_commute:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    mov w8, w2
-; CHECK-NEXT:    mvn w9, w2
-; CHECK-NEXT:    lsl w10, w1, #1
-; CHECK-NEXT:    lsr w8, w0, w8
-; CHECK-NEXT:    lsl w9, w10, w9
-; CHECK-NEXT:    lsr w10, w1, w2
-; CHECK-NEXT:    orr w8, w9, w8
-; CHECK-NEXT:    orr w0, w10, w8
+; CHECK-NEXT:    lsr w9, w1, w2
+; CHECK-NEXT:    mvn x8, x8
+; CHECK-NEXT:    lsr w10, w0, w2
+; CHECK-NEXT:    lsl w11, w1, #1
+; CHECK-NEXT:    orr w9, w9, w10
+; CHECK-NEXT:    lsl w8, w11, w8
+; CHECK-NEXT:    orr w0, w9, w8
 ; CHECK-NEXT:    ret
   %shy = lshr i32 %y, %s
   %fun = call i32 @llvm.fshr.i32(i32 %y, i32 %x, i32 %s)
@@ -474,9 +480,9 @@ define i32 @or_lshr_rotr_commute(i32 %x, i32 %y, i32 %s) {
 define i32 @or_shl_fshl_simplify(i32 %x, i32 %y, i32 %s) {
 ; CHECK-LABEL: or_shl_fshl_simplify:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    // kill: def $w2 killed $w2 def $x2
-; CHECK-NEXT:    mvn w8, w2
+; CHECK-NEXT:    mov w8, w2
 ; CHECK-NEXT:    lsr w9, w0, #1
+; CHECK-NEXT:    mvn x8, x8
 ; CHECK-NEXT:    lsl w10, w1, w2
 ; CHECK-NEXT:    lsr w8, w9, w8
 ; CHECK-NEXT:    orr w0, w10, w8
@@ -490,9 +496,9 @@ define i32 @or_shl_fshl_simplify(i32 %x, i32 %y, i32 %s) {
 define i32 @or_lshr_fshr_simplify(i32 %x, i32 %y, i32 %s) {
 ; CHECK-LABEL: or_lshr_fshr_simplify:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    // kill: def $w2 killed $w2 def $x2
-; CHECK-NEXT:    mvn w8, w2
+; CHECK-NEXT:    mov w8, w2
 ; CHECK-NEXT:    lsl w9, w0, #1
+; CHECK-NEXT:    mvn x8, x8
 ; CHECK-NEXT:    lsr w10, w1, w2
 ; CHECK-NEXT:    lsl w8, w9, w8
 ; CHECK-NEXT:    orr w0, w8, w10

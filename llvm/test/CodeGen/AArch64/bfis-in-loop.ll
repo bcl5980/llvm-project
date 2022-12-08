@@ -22,11 +22,11 @@ define i64 @bfis_in_loop_zero() {
 ; CHECK-NEXT:    // =>This Inner Loop Header: Depth=1
 ; CHECK-NEXT:    ldrh w10, [x9, #72]
 ; CHECK-NEXT:    cmp w10, #0
-; CHECK-NEXT:    ubfx x11, x10, #8, #24
+; CHECK-NEXT:    lsr w11, w10, #8
 ; CHECK-NEXT:    cset w12, ne
 ; CHECK-NEXT:    csel w8, w8, w11, eq
 ; CHECK-NEXT:    ldr x11, [x9, #8]
-; CHECK-NEXT:    and x9, x10, #0xff
+; CHECK-NEXT:    and w9, w10, #0xff
 ; CHECK-NEXT:    and x10, x0, #0xffffffff00000000
 ; CHECK-NEXT:    orr x9, x9, x8, lsl #8
 ; CHECK-NEXT:    orr x10, x10, x12, lsl #16
@@ -91,11 +91,11 @@ define i64 @bfis_in_loop_undef() {
 ; CHECK-NEXT:    // =>This Inner Loop Header: Depth=1
 ; CHECK-NEXT:    ldrh w10, [x9, #72]
 ; CHECK-NEXT:    cmp w10, #0
-; CHECK-NEXT:    ubfx x11, x10, #8, #24
+; CHECK-NEXT:    lsr w11, w10, #8
 ; CHECK-NEXT:    cset w12, ne
 ; CHECK-NEXT:    csel w8, w8, w11, eq
 ; CHECK-NEXT:    ldr x11, [x9, #8]
-; CHECK-NEXT:    and x9, x10, #0xff
+; CHECK-NEXT:    and w9, w10, #0xff
 ; CHECK-NEXT:    and x10, x0, #0xffffffff00000000
 ; CHECK-NEXT:    orr x9, x9, x8, lsl #8
 ; CHECK-NEXT:    orr x10, x10, x12, lsl #16

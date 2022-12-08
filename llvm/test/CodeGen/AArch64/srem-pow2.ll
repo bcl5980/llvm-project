@@ -91,8 +91,8 @@ define i64 @fold_srem_pow2_i64(i64 %x) {
 ; CHECK-LABEL: fold_srem_pow2_i64:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    negs x8, x0
-; CHECK-NEXT:    and x9, x0, #0x3f
-; CHECK-NEXT:    and x8, x8, #0x3f
+; CHECK-NEXT:    and w9, w0, #0x3f
+; CHECK-NEXT:    and w8, w8, #0x3f
 ; CHECK-NEXT:    csneg x0, x9, x8, mi
 ; CHECK-NEXT:    ret
   %1 = srem i64 %x, 64

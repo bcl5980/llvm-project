@@ -699,7 +699,9 @@ define void @and_32r(ptr %p, i32 %v) {
 define void @and_64i(ptr %p) {
 ; X64-LABEL: and_64i:
 ; X64:       # %bb.0:
-; X64-NEXT:    andq $2, (%rdi)
+; X64-NEXT:    movq (%rdi), %rax
+; X64-NEXT:    andl $2, %eax
+; X64-NEXT:    movq %rax, (%rdi)
 ; X64-NEXT:    retq
 ;
 ; X32-LABEL: and_64i:

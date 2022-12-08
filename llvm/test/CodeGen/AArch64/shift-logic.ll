@@ -155,7 +155,8 @@ define i32 @lshr_or_extra_use(i32 %x, i32 %y, i32* %p) nounwind {
 define i64 @desirable_to_commute1(i64 %x) {
 ; CHECK-LABEL: desirable_to_commute1:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    and x0, x0, #0x7fff8
+; CHECK-NEXT:    ubfx w8, w0, #3, #16
+; CHECK-NEXT:    ubfiz x0, x8, #3, #32
 ; CHECK-NEXT:    ret
   %s1 = lshr i64 %x, 3
   %a = and i64 %s1, 65535
@@ -166,8 +167,8 @@ define i64 @desirable_to_commute1(i64 %x) {
 define i64 @desirable_to_commute2(i64* %p, i64 %i) {
 ; CHECK-LABEL: desirable_to_commute2:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    and x8, x1, #0x1ff8
-; CHECK-NEXT:    ldr x0, [x0, x8]
+; CHECK-NEXT:    ubfx w8, w1, #3, #10
+; CHECK-NEXT:    ldr x0, [x0, w8, uxtw #3]
 ; CHECK-NEXT:    ret
   %lshr = lshr i64 %i, 3
   %and = and i64 %lshr, 1023

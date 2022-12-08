@@ -80,8 +80,9 @@ define i8 @t6(ptr %X, i32 %i) {
 ; CHECK-LABEL: t6:
 ; CHECK:       # %bb.0: # %entry
 ; CHECK-NEXT:    # kill: def $esi killed $esi def $rsi
-; CHECK-NEXT:    andl $15, %esi
-; CHECK-NEXT:    movzbl (%rdi,%rsi,4), %eax
+; CHECK-NEXT:    shll $2, %esi
+; CHECK-NEXT:    andl $60, %esi
+; CHECK-NEXT:    movzbl (%rdi,%rsi), %eax
 ; CHECK-NEXT:    retq
 entry:
   %tmp2 = shl i32 %i, 2

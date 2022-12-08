@@ -280,8 +280,8 @@ define i32 @shiftedreg_from_and_negative_andc5(i32 %a, i32 %b) {
 define i64 @shiftedreg_from_and_negative_andc6(i64 %a, i64 %b) {
 ; CHECK-LABEL: shiftedreg_from_and_negative_andc6:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    lsr x8, x0, #2
-; CHECK-NEXT:    and x8, x8, #0x6
+; CHECK-NEXT:    ubfx x8, x0, #2, #30
+; CHECK-NEXT:    and w8, w8, #0x6
 ; CHECK-NEXT:    add x0, x8, x1
 ; CHECK-NEXT:    ret
   %lshr = lshr i64 %a, 2

@@ -509,9 +509,11 @@ define i32 @or_and_and_i32(i32 %x, i32 %y) {
 define i64 @or_and_and_commute_i64(i64 %x, i64 %y) {
 ; CHECK-LABEL: or_and_and_commute_i64:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    movq %rdi, %rax
-; CHECK-NEXT:    orq %rsi, %rax
+; CHECK-NEXT:    movq %rsi, %rax
+; CHECK-NEXT:    orq %rdi, %rax
+; CHECK-NEXT:    andl $8, %edi
 ; CHECK-NEXT:    andq $-3, %rax
+; CHECK-NEXT:    orq %rdi, %rax
 ; CHECK-NEXT:    retq
   %xy = or i64 %x, %y
   %mx = and i64 %x, 8

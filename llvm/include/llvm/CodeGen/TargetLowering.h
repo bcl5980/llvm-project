@@ -3699,7 +3699,8 @@ public:
   /// uses isZExtFree and ZERO_EXTEND for the widening cast, but it could be
   /// generalized for targets with other types of implicit widening casts.
   bool ShrinkDemandedOp(SDValue Op, unsigned BitWidth, const APInt &Demanded,
-                        TargetLoweringOpt &TLO) const;
+                        TargetLoweringOpt &TLO,
+                        unsigned ZExt = ISD::ANY_EXTEND) const;
 
   /// Look at Op.  At this point, we know that only the DemandedBits bits of the
   /// result of Op are ever used downstream.  If we can use this information to

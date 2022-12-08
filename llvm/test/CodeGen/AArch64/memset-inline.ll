@@ -41,9 +41,8 @@ define void @memset_4(i8* %a, i8 %value) nounwind {
 define void @memset_8(i8* %a, i8 %value) nounwind {
 ; ALL-LABEL: memset_8:
 ; ALL:       // %bb.0:
-; ALL-NEXT:    // kill: def $w1 killed $w1 def $x1
 ; ALL-NEXT:    mov x8, #72340172838076673
-; ALL-NEXT:    and x9, x1, #0xff
+; ALL-NEXT:    and w9, w1, #0xff
 ; ALL-NEXT:    mul x8, x9, x8
 ; ALL-NEXT:    str x8, [x0]
 ; ALL-NEXT:    ret
@@ -54,9 +53,8 @@ define void @memset_8(i8* %a, i8 %value) nounwind {
 define void @memset_16(i8* %a, i8 %value) nounwind {
 ; ALL-LABEL: memset_16:
 ; ALL:       // %bb.0:
-; ALL-NEXT:    // kill: def $w1 killed $w1 def $x1
 ; ALL-NEXT:    mov x8, #72340172838076673
-; ALL-NEXT:    and x9, x1, #0xff
+; ALL-NEXT:    and w9, w1, #0xff
 ; ALL-NEXT:    mul x8, x9, x8
 ; ALL-NEXT:    stp x8, x8, [x0]
 ; ALL-NEXT:    ret
@@ -67,9 +65,8 @@ define void @memset_16(i8* %a, i8 %value) nounwind {
 define void @memset_32(i8* %a, i8 %value) nounwind {
 ; GPR-LABEL: memset_32:
 ; GPR:       // %bb.0:
-; GPR-NEXT:    // kill: def $w1 killed $w1 def $x1
 ; GPR-NEXT:    mov x8, #72340172838076673
-; GPR-NEXT:    and x9, x1, #0xff
+; GPR-NEXT:    and w9, w1, #0xff
 ; GPR-NEXT:    mul x8, x9, x8
 ; GPR-NEXT:    stp x8, x8, [x0, #16]
 ; GPR-NEXT:    stp x8, x8, [x0]
@@ -87,9 +84,8 @@ define void @memset_32(i8* %a, i8 %value) nounwind {
 define void @memset_64(i8* %a, i8 %value) nounwind {
 ; GPR-LABEL: memset_64:
 ; GPR:       // %bb.0:
-; GPR-NEXT:    // kill: def $w1 killed $w1 def $x1
 ; GPR-NEXT:    mov x8, #72340172838076673
-; GPR-NEXT:    and x9, x1, #0xff
+; GPR-NEXT:    and w9, w1, #0xff
 ; GPR-NEXT:    mul x8, x9, x8
 ; GPR-NEXT:    stp x8, x8, [x0, #48]
 ; GPR-NEXT:    stp x8, x8, [x0, #32]
@@ -112,9 +108,8 @@ define void @memset_64(i8* %a, i8 %value) nounwind {
 define void @aligned_memset_16(i8* align 16 %a, i8 %value) nounwind {
 ; ALL-LABEL: aligned_memset_16:
 ; ALL:       // %bb.0:
-; ALL-NEXT:    // kill: def $w1 killed $w1 def $x1
 ; ALL-NEXT:    mov x8, #72340172838076673
-; ALL-NEXT:    and x9, x1, #0xff
+; ALL-NEXT:    and w9, w1, #0xff
 ; ALL-NEXT:    mul x8, x9, x8
 ; ALL-NEXT:    stp x8, x8, [x0]
 ; ALL-NEXT:    ret
@@ -125,9 +120,8 @@ define void @aligned_memset_16(i8* align 16 %a, i8 %value) nounwind {
 define void @aligned_memset_32(i8* align 32 %a, i8 %value) nounwind {
 ; GPR-LABEL: aligned_memset_32:
 ; GPR:       // %bb.0:
-; GPR-NEXT:    // kill: def $w1 killed $w1 def $x1
 ; GPR-NEXT:    mov x8, #72340172838076673
-; GPR-NEXT:    and x9, x1, #0xff
+; GPR-NEXT:    and w9, w1, #0xff
 ; GPR-NEXT:    mul x8, x9, x8
 ; GPR-NEXT:    stp x8, x8, [x0, #16]
 ; GPR-NEXT:    stp x8, x8, [x0]
@@ -145,9 +139,8 @@ define void @aligned_memset_32(i8* align 32 %a, i8 %value) nounwind {
 define void @aligned_memset_64(i8* align 64 %a, i8 %value) nounwind {
 ; GPR-LABEL: aligned_memset_64:
 ; GPR:       // %bb.0:
-; GPR-NEXT:    // kill: def $w1 killed $w1 def $x1
 ; GPR-NEXT:    mov x8, #72340172838076673
-; GPR-NEXT:    and x9, x1, #0xff
+; GPR-NEXT:    and w9, w1, #0xff
 ; GPR-NEXT:    mul x8, x9, x8
 ; GPR-NEXT:    stp x8, x8, [x0, #48]
 ; GPR-NEXT:    stp x8, x8, [x0, #32]

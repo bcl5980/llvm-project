@@ -553,7 +553,8 @@ bool TargetLowering::ShrinkDemandedConstant(SDValue Op,
 /// generalized for targets with other types of implicit widening casts.
 bool TargetLowering::ShrinkDemandedOp(SDValue Op, unsigned BitWidth,
                                       const APInt &Demanded,
-                                      TargetLoweringOpt &TLO) const {
+                                      TargetLoweringOpt &TLO,
+                                      unsigned ExtOp) const {
   assert(Op.getNumOperands() == 2 &&
          "ShrinkDemandedOp only supports binary operators!");
   assert(Op.getNode()->getNumValues() == 1 &&
@@ -588,7 +589,23 @@ bool TargetLowering::ShrinkDemandedOp(SDValue Op, unsigned BitWidth,
           DAG.getNode(ISD::TRUNCATE, dl, SmallVT, Op.getOperand(0)),
           DAG.getNode(ISD::TRUNCATE, dl, SmallVT, Op.getOperand(1)));
       assert(DemandedSize <= SmallVTBits && "Narrowed below demanded bits?");
-      SDValue Z = DAG.getNode(ISD::ANY_EXTEND, dl, Op.getValueType(), X);
+      SDValue Z = DAG.getNode(ExtOp, dl, Op.getValueType(), X);
+      unsigned Opcode0 = Op.getOperand(0).getOpcode();
+      if (Opcode0 == ISD::AND || Opcode0 == ISD::OR || Opcode0 == ISD::XOR)
+        ShrinkDemandedOp(Op.getOperand(0), BitWidth, Demanded, TLO, ExtOp);
+      else if (Opcode0 == ISD::ADD || Opcode0 == ISD::SUB ||
+               Opcode0 == ISD::SHL)
+        ShrinkDemandedOp(Op.getOperand(0), BitWidth,
+                         APInt::getMaxValue(SmallVTBits), TLO, ExtOp);
+
+      unsigned Opcode1 = Op.getOperand(1).getOpcode();
+      if (Opcode1 == ISD::AND || Opcode1 == ISD::OR || Opcode1 == ISD::XOR)
+        ShrinkDemandedOp(Op.getOperand(1), BitWidth, Demanded, TLO, ExtOp);
+      else if (Opcode1 == ISD::ADD || Opcode1 == ISD::SUB ||
+               Opcode1 == ISD::SHL)
+        ShrinkDemandedOp(Op.getOperand(1), BitWidth,
+                         APInt::getMaxValue(SmallVTBits), TLO, ExtOp);
+
       return TLO.CombineTo(Op, Z);
     }
   }
@@ -1416,8 +1433,11 @@ bool TargetLowering::SimplifyDemandedBits(
     if (ShrinkDemandedConstant(Op, ~Known2.Zero & DemandedBits, DemandedElts,
                                TLO))
       return true;
+
+    Known &= Known2;
     // If the operation can be done in a smaller type, do so.
-    if (ShrinkDemandedOp(Op, BitWidth, DemandedBits, TLO))
+    if (ShrinkDemandedOp(Op, BitWidth, Known.getMaxValue(), TLO,
+                         ISD::ZERO_EXTEND))
       return true;
 
     // Attempt to avoid multi-use ops if we don't need anything from them.
@@ -1434,7 +1454,6 @@ bool TargetLowering::SimplifyDemandedBits(
       }
     }
 
-    Known &= Known2;
     break;
   }
   case ISD::OR: {
@@ -1526,9 +1545,6 @@ bool TargetLowering::SimplifyDemandedBits(
       return TLO.CombineTo(Op, Op0);
     if (DemandedBits.isSubsetOf(Known2.Zero))
       return TLO.CombineTo(Op, Op1);
-    // If the operation can be done in a smaller type, do so.
-    if (ShrinkDemandedOp(Op, BitWidth, DemandedBits, TLO))
-      return true;
 
     // If all of the unknown bits are known to be zero on one side or the other
     // turn this into an *inclusive* or.
@@ -1590,6 +1606,12 @@ bool TargetLowering::SimplifyDemandedBits(
       if (ShrinkDemandedConstant(Op, DemandedBits, DemandedElts, TLO))
         return true;
 
+    Known ^= Known2;
+    // If the operation can be done in a smaller type, do so.
+    if (ShrinkDemandedOp(Op, BitWidth, Known.getMaxValue(), TLO,
+                         ISD::ZERO_EXTEND))
+      return true;
+
     // Attempt to avoid multi-use ops if we don't need anything from them.
     if (!DemandedBits.isAllOnes() || !DemandedElts.isAllOnes()) {
       SDValue DemandedOp0 = SimplifyMultipleUseDemandedBits(
@@ -1604,7 +1626,6 @@ bool TargetLowering::SimplifyDemandedBits(
       }
     }
 
-    Known ^= Known2;
     break;
   }
   case ISD::SELECT:

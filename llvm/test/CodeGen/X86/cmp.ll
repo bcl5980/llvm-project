@@ -501,7 +501,8 @@ define i32 @lowmask_i64_mask32(i64 %val) {
 ; CHECK-LABEL: lowmask_i64_mask32:
 ; CHECK:       # %bb.0:
 ; CHECK-NEXT:    xorl %eax, %eax # encoding: [0x31,0xc0]
-; CHECK-NEXT:    shlq $44, %rdi # encoding: [0x48,0xc1,0xe7,0x2c]
+; CHECK-NEXT:    testl $1048575, %edi # encoding: [0xf7,0xc7,0xff,0xff,0x0f,0x00]
+; CHECK-NEXT:    # imm = 0xFFFFF
 ; CHECK-NEXT:    setne %al # encoding: [0x0f,0x95,0xc0]
 ; CHECK-NEXT:    retq # encoding: [0xc3]
   %and = and i64 %val, 1048575

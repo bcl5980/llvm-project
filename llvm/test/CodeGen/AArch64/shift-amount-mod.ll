@@ -1121,7 +1121,7 @@ define i64 @reg64_lshr_by_masked_negated_unfolded_sub_b(i64 %val, i64 %a, i64 %b
 ; CHECK-LABEL: reg64_lshr_by_masked_negated_unfolded_sub_b:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    neg w8, w1
-; CHECK-NEXT:    and x8, x8, #0x3f
+; CHECK-NEXT:    and w8, w8, #0x3f
 ; CHECK-NEXT:    sub x8, x8, x2
 ; CHECK-NEXT:    lsr x0, x0, x8
 ; CHECK-NEXT:    ret
@@ -1150,7 +1150,7 @@ define i64 @reg64_lshr_by_masked_b_sub_negated_unfolded(i64 %val, i64 %a, i64 %b
 ; CHECK-LABEL: reg64_lshr_by_masked_b_sub_negated_unfolded:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    neg w8, w1
-; CHECK-NEXT:    and x8, x8, #0x3f
+; CHECK-NEXT:    and w8, w8, #0x3f
 ; CHECK-NEXT:    sub x8, x2, x8
 ; CHECK-NEXT:    lsr x0, x0, x8
 ; CHECK-NEXT:    ret
@@ -1179,7 +1179,7 @@ define i64 @reg64_lshr_by_masked_negated_unfolded_add_b(i64 %val, i64 %a, i64 %b
 ; CHECK-LABEL: reg64_lshr_by_masked_negated_unfolded_add_b:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    neg w8, w1
-; CHECK-NEXT:    and x8, x8, #0x3f
+; CHECK-NEXT:    and w8, w8, #0x3f
 ; CHECK-NEXT:    add x8, x8, x2
 ; CHECK-NEXT:    lsr x0, x0, x8
 ; CHECK-NEXT:    ret

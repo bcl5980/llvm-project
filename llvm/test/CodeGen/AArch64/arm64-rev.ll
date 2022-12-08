@@ -707,19 +707,22 @@ define i64 @test_rev16_x_hwbyteswaps_complex1(i64 %a) nounwind {
 ; CHECK-LABEL: test_rev16_x_hwbyteswaps_complex1:
 ; CHECK:       // %bb.0: // %entry
 ; CHECK-NEXT:    lsr x8, x0, #48
-; CHECK-NEXT:    lsr x9, x0, #8
-; CHECK-NEXT:    lsr x10, x0, #32
-; CHECK-NEXT:    and x11, x9, #0xff000000000000
-; CHECK-NEXT:    lsr x12, x0, #16
-; CHECK-NEXT:    bfi x11, x8, #56, #8
-; CHECK-NEXT:    and x8, x9, #0xff00000000
-; CHECK-NEXT:    orr x8, x11, x8
-; CHECK-NEXT:    and x9, x9, #0xff0000
-; CHECK-NEXT:    bfi x8, x10, #40, #8
+; CHECK-NEXT:    lsr x10, x0, #8
+; CHECK-NEXT:    lsr x9, x0, #32
+; CHECK-NEXT:    and x12, x10, #0xff000000000000
+; CHECK-NEXT:    lsl x11, x0, #8
+; CHECK-NEXT:    ubfx x13, x0, #8, #8
+; CHECK-NEXT:    bfi x12, x8, #56, #8
+; CHECK-NEXT:    and x8, x10, #0xff00000000
+; CHECK-NEXT:    orr x8, x12, x8
+; CHECK-NEXT:    and w10, w10, #0xff0000
+; CHECK-NEXT:    bfi x8, x9, #40, #8
+; CHECK-NEXT:    and w9, w11, #0xff000000
+; CHECK-NEXT:    mov w12, w13
+; CHECK-NEXT:    orr x8, x8, x10
+; CHECK-NEXT:    orr x9, x9, x12
 ; CHECK-NEXT:    orr x8, x8, x9
-; CHECK-NEXT:    ubfiz x9, x0, #8, #8
-; CHECK-NEXT:    bfi x8, x12, #24, #8
-; CHECK-NEXT:    bfxil x8, x0, #8, #8
+; CHECK-NEXT:    and w9, w11, #0xff00
 ; CHECK-NEXT:    orr x0, x8, x9
 ; CHECK-NEXT:    ret
 ;
@@ -767,16 +770,23 @@ entry:
 define i64 @test_rev16_x_hwbyteswaps_complex2(i64 %a) nounwind {
 ; CHECK-LABEL: test_rev16_x_hwbyteswaps_complex2:
 ; CHECK:       // %bb.0: // %entry
-; CHECK-NEXT:    lsr x9, x0, #48
-; CHECK-NEXT:    lsr x10, x0, #32
-; CHECK-NEXT:    lsr x8, x0, #8
-; CHECK-NEXT:    lsr x11, x0, #16
-; CHECK-NEXT:    and x8, x8, #0xff00ff00ff00ff
-; CHECK-NEXT:    bfi x8, x9, #56, #8
-; CHECK-NEXT:    bfi x8, x10, #40, #8
-; CHECK-NEXT:    bfi x8, x11, #24, #8
-; CHECK-NEXT:    bfi x8, x0, #8, #8
-; CHECK-NEXT:    mov x0, x8
+; CHECK-NEXT:    lsr x9, x0, #8
+; CHECK-NEXT:    ubfx x10, x0, #8, #8
+; CHECK-NEXT:    and x11, x9, #0xffffff00000000
+; CHECK-NEXT:    lsr x8, x0, #48
+; CHECK-NEXT:    mov w10, w10
+; CHECK-NEXT:    and x11, x11, #0xffff00ffffffffff
+; CHECK-NEXT:    and w9, w9, #0xff0000
+; CHECK-NEXT:    orr x10, x11, x10
+; CHECK-NEXT:    lsr x11, x0, #32
+; CHECK-NEXT:    orr x9, x10, x9
+; CHECK-NEXT:    lsl x10, x0, #8
+; CHECK-NEXT:    bfi x9, x8, #56, #8
+; CHECK-NEXT:    and w8, w10, #0xff000000
+; CHECK-NEXT:    and w10, w10, #0xff00
+; CHECK-NEXT:    bfi x9, x11, #40, #8
+; CHECK-NEXT:    orr x8, x8, x10
+; CHECK-NEXT:    orr x0, x9, x8
 ; CHECK-NEXT:    ret
 ;
 ; GISEL-LABEL: test_rev16_x_hwbyteswaps_complex2:
@@ -825,19 +835,22 @@ define i64 @test_rev16_x_hwbyteswaps_complex3(i64 %a) nounwind {
 ; CHECK-LABEL: test_rev16_x_hwbyteswaps_complex3:
 ; CHECK:       // %bb.0: // %entry
 ; CHECK-NEXT:    lsr x8, x0, #48
-; CHECK-NEXT:    lsr x9, x0, #8
-; CHECK-NEXT:    lsr x10, x0, #32
-; CHECK-NEXT:    and x11, x9, #0xff000000000000
-; CHECK-NEXT:    lsr x12, x0, #16
-; CHECK-NEXT:    bfi x11, x8, #56, #8
-; CHECK-NEXT:    and x8, x9, #0xff00000000
-; CHECK-NEXT:    orr x8, x8, x11
-; CHECK-NEXT:    and x9, x9, #0xff0000
-; CHECK-NEXT:    bfi x8, x10, #40, #8
+; CHECK-NEXT:    lsr x10, x0, #8
+; CHECK-NEXT:    lsr x9, x0, #32
+; CHECK-NEXT:    and x12, x10, #0xff000000000000
+; CHECK-NEXT:    lsl x11, x0, #8
+; CHECK-NEXT:    ubfx x13, x0, #8, #8
+; CHECK-NEXT:    bfi x12, x8, #56, #8
+; CHECK-NEXT:    and x8, x10, #0xff00000000
+; CHECK-NEXT:    orr x8, x8, x12
+; CHECK-NEXT:    and w10, w10, #0xff0000
+; CHECK-NEXT:    bfi x8, x9, #40, #8
+; CHECK-NEXT:    and w9, w11, #0xff000000
+; CHECK-NEXT:    mov w12, w13
+; CHECK-NEXT:    orr x8, x10, x8
+; CHECK-NEXT:    orr x9, x12, x9
 ; CHECK-NEXT:    orr x8, x9, x8
-; CHECK-NEXT:    ubfiz x9, x0, #8, #8
-; CHECK-NEXT:    bfi x8, x12, #24, #8
-; CHECK-NEXT:    bfxil x8, x0, #8, #8
+; CHECK-NEXT:    and w9, w11, #0xff00
 ; CHECK-NEXT:    orr x0, x9, x8
 ; CHECK-NEXT:    ret
 ;
@@ -889,7 +902,7 @@ define i64 @test_or_and_combine1(i64 %a) nounwind {
 ; CHECK-NEXT:    lsr x9, x0, #8
 ; CHECK-NEXT:    and x10, x9, #0xff000000000000
 ; CHECK-NEXT:    bfi x10, x8, #32, #8
-; CHECK-NEXT:    and x8, x9, #0xff0000
+; CHECK-NEXT:    and w8, w9, #0xff0000
 ; CHECK-NEXT:    orr x0, x10, x8
 ; CHECK-NEXT:    ret
 ;
@@ -918,12 +931,12 @@ define i64 @test_or_and_combine2(i64 %a, i64 %b) nounwind {
 ; CHECK-LABEL: test_or_and_combine2:
 ; CHECK:       // %bb.0: // %entry
 ; CHECK-NEXT:    lsr x8, x0, #8
-; CHECK-NEXT:    lsl x9, x0, #8
-; CHECK-NEXT:    and x10, x8, #0xff000000000000
-; CHECK-NEXT:    and x11, x9, #0xff00000000
-; CHECK-NEXT:    and x8, x8, #0xff0000
-; CHECK-NEXT:    orr x9, x10, x9
-; CHECK-NEXT:    orr x8, x11, x8
+; CHECK-NEXT:    lsl x10, x0, #8
+; CHECK-NEXT:    and x9, x8, #0xff000000000000
+; CHECK-NEXT:    and w8, w8, #0xff0000
+; CHECK-NEXT:    orr x9, x9, x10
+; CHECK-NEXT:    and x10, x10, #0xff00000000
+; CHECK-NEXT:    orr x9, x9, x10
 ; CHECK-NEXT:    orr x0, x9, x8
 ; CHECK-NEXT:    ret
 ;

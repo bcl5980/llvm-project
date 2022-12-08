@@ -320,12 +320,11 @@ define <32 x i8> @test_lanex_32xi8(<32 x i8> %a, i32 %x) {
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    sub sp, sp, #32
 ; CHECK-NEXT:    .cfi_def_cfa_offset 32
-; CHECK-NEXT:    // kill: def $w0 killed $w0 def $x0
-; CHECK-NEXT:    and x9, x0, #0x1f
+; CHECK-NEXT:    and w9, w0, #0x1f
 ; CHECK-NEXT:    mov x8, sp
 ; CHECK-NEXT:    mov w10, #30
 ; CHECK-NEXT:    stp q0, q1, [sp]
-; CHECK-NEXT:    strb w10, [x8, x9]
+; CHECK-NEXT:    strb w10, [x8, w9, uxtw]
 ; CHECK-NEXT:    ldp q0, q1, [sp], #32
 ; CHECK-NEXT:    ret
   %b = insertelement <32 x i8> %a, i8 30, i32 %x

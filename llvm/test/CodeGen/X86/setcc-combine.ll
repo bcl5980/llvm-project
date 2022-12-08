@@ -249,9 +249,9 @@ define void @test_i1_uge(ptr%A2) {
 ; CHECK-NEXT:    andb %cl, %al
 ; CHECK-NEXT:    movzbl %al, %eax
 ; CHECK-NEXT:    andl $1, %eax
-; CHECK-NEXT:    negq %rax
+; CHECK-NEXT:    subq %rax, %rdi
 ; CHECK-NEXT:    andb $1, %cl
-; CHECK-NEXT:    movb %cl, (%rdi,%rax)
+; CHECK-NEXT:    movb %cl, (%rdi)
 ; CHECK-NEXT:    retq
   %L5 = load i1, ptr %A2
   %C3 = icmp ne i1 %L5, true

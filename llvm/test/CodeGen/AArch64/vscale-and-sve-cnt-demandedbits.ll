@@ -29,7 +29,7 @@ define i64 @cntb_and_elimination() {
 ; CHECK-LABEL: cntb_and_elimination:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    cntb x8
-; CHECK-NEXT:    and x9, x8, #0x1fc
+; CHECK-NEXT:    and w9, w8, #0x1fc
 ; CHECK-NEXT:    add x0, x8, x9
 ; CHECK-NEXT:    ret
   %cntb = call i64 @llvm.aarch64.sve.cntb(i32 31)
@@ -43,7 +43,7 @@ define i64 @cnth_and_elimination() {
 ; CHECK-LABEL: cnth_and_elimination:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    cnth x8
-; CHECK-NEXT:    and x9, x8, #0xfc
+; CHECK-NEXT:    and w9, w8, #0xfc
 ; CHECK-NEXT:    add x0, x8, x9
 ; CHECK-NEXT:    ret
   %cnth = call i64 @llvm.aarch64.sve.cnth(i32 31)
@@ -57,7 +57,7 @@ define i64 @cntw_and_elimination() {
 ; CHECK-LABEL: cntw_and_elimination:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    cntw x8
-; CHECK-NEXT:    and x9, x8, #0x7c
+; CHECK-NEXT:    and w9, w8, #0x7c
 ; CHECK-NEXT:    add x0, x8, x9
 ; CHECK-NEXT:    ret
   %cntw = call i64 @llvm.aarch64.sve.cntw(i32 31)
@@ -71,7 +71,7 @@ define i64 @cntd_and_elimination() {
 ; CHECK-LABEL: cntd_and_elimination:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    cntd x8
-; CHECK-NEXT:    and x9, x8, #0x3c
+; CHECK-NEXT:    and w9, w8, #0x3c
 ; CHECK-NEXT:    add x0, x8, x9
 ; CHECK-NEXT:    ret
   %cntd = call i64 @llvm.aarch64.sve.cntd(i32 31)
@@ -86,7 +86,7 @@ define i64 @vscale_trunc_zext() vscale_range(1,16) {
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    rdvl x8, #1
 ; CHECK-NEXT:    lsr x8, x8, #4
-; CHECK-NEXT:    and x0, x8, #0xffffffff
+; CHECK-NEXT:    mov w0, w8
 ; CHECK-NEXT:    ret
   %vscale = call i32 @llvm.vscale.i32()
   %zext = zext i32 %vscale to i64
@@ -108,7 +108,8 @@ define i64 @vscale_trunc_sext() vscale_range(1,16) {
 define i64 @count_bytes_trunc_zext() {
 ; CHECK-LABEL: count_bytes_trunc_zext:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    cntb x0
+; CHECK-NEXT:    cntb x8
+; CHECK-NEXT:    mov w0, w8
 ; CHECK-NEXT:    ret
   %cnt = call i64 @llvm.aarch64.sve.cntb(i32 31)
   %trunc = trunc i64 %cnt to i32
@@ -119,7 +120,8 @@ define i64 @count_bytes_trunc_zext() {
 define i64 @count_halfs_trunc_zext() {
 ; CHECK-LABEL: count_halfs_trunc_zext:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    cnth x0
+; CHECK-NEXT:    cnth x8
+; CHECK-NEXT:    mov w0, w8
 ; CHECK-NEXT:    ret
   %cnt = call i64 @llvm.aarch64.sve.cnth(i32 31)
   %trunc = trunc i64 %cnt to i32
@@ -130,7 +132,8 @@ define i64 @count_halfs_trunc_zext() {
 define i64 @count_words_trunc_zext() {
 ; CHECK-LABEL: count_words_trunc_zext:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    cntw x0
+; CHECK-NEXT:    cntw x8
+; CHECK-NEXT:    mov w0, w8
 ; CHECK-NEXT:    ret
   %cnt = call i64 @llvm.aarch64.sve.cntw(i32 31)
   %trunc = trunc i64 %cnt to i32
@@ -141,7 +144,8 @@ define i64 @count_words_trunc_zext() {
 define i64 @count_doubles_trunc_zext() {
 ; CHECK-LABEL: count_doubles_trunc_zext:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    cntd x0
+; CHECK-NEXT:    cntd x8
+; CHECK-NEXT:    mov w0, w8
 ; CHECK-NEXT:    ret
   %cnt = call i64 @llvm.aarch64.sve.cntd(i32 31)
   %trunc = trunc i64 %cnt to i32

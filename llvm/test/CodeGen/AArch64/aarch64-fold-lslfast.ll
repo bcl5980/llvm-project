@@ -11,10 +11,9 @@ define i16 @halfword(%struct.a* %ctx, i32 %xor72) nounwind {
 ; CHECK0-LABEL: halfword:
 ; CHECK0:       // %bb.0:
 ; CHECK0-NEXT:    stp x30, x21, [sp, #-32]! // 16-byte Folded Spill
-; CHECK0-NEXT:    // kill: def $w1 killed $w1 def $x1
-; CHECK0-NEXT:    ubfx x8, x1, #9, #8
+; CHECK0-NEXT:    ubfx w8, w1, #9, #8
 ; CHECK0-NEXT:    stp x20, x19, [sp, #16] // 16-byte Folded Spill
-; CHECK0-NEXT:    lsl x21, x8, #1
+; CHECK0-NEXT:    ubfiz x21, x8, #1, #32
 ; CHECK0-NEXT:    mov x19, x0
 ; CHECK0-NEXT:    ldrh w20, [x0, x21]
 ; CHECK0-NEXT:    bl foo
@@ -27,14 +26,13 @@ define i16 @halfword(%struct.a* %ctx, i32 %xor72) nounwind {
 ; CHECK3-LABEL: halfword:
 ; CHECK3:       // %bb.0:
 ; CHECK3-NEXT:    stp x30, x21, [sp, #-32]! // 16-byte Folded Spill
-; CHECK3-NEXT:    // kill: def $w1 killed $w1 def $x1
-; CHECK3-NEXT:    ubfx x21, x1, #9, #8
+; CHECK3-NEXT:    ubfx w21, w1, #9, #8
 ; CHECK3-NEXT:    stp x20, x19, [sp, #16] // 16-byte Folded Spill
 ; CHECK3-NEXT:    mov x19, x0
-; CHECK3-NEXT:    ldrh w20, [x0, x21, lsl #1]
+; CHECK3-NEXT:    ldrh w20, [x0, w21, uxtw #1]
 ; CHECK3-NEXT:    bl foo
 ; CHECK3-NEXT:    mov w0, w20
-; CHECK3-NEXT:    strh w20, [x19, x21, lsl #1]
+; CHECK3-NEXT:    strh w20, [x19, w21, uxtw #1]
 ; CHECK3-NEXT:    ldp x20, x19, [sp, #16] // 16-byte Folded Reload
 ; CHECK3-NEXT:    ldp x30, x21, [sp], #32 // 16-byte Folded Reload
 ; CHECK3-NEXT:    ret
@@ -52,10 +50,9 @@ define i32 @word(%struct.b* %ctx, i32 %xor72) nounwind {
 ; CHECK0-LABEL: word:
 ; CHECK0:       // %bb.0:
 ; CHECK0-NEXT:    stp x30, x21, [sp, #-32]! // 16-byte Folded Spill
-; CHECK0-NEXT:    // kill: def $w1 killed $w1 def $x1
-; CHECK0-NEXT:    ubfx x8, x1, #9, #8
+; CHECK0-NEXT:    ubfx w8, w1, #9, #8
 ; CHECK0-NEXT:    stp x20, x19, [sp, #16] // 16-byte Folded Spill
-; CHECK0-NEXT:    lsl x21, x8, #2
+; CHECK0-NEXT:    ubfiz x21, x8, #2, #32
 ; CHECK0-NEXT:    mov x19, x0
 ; CHECK0-NEXT:    ldr w20, [x0, x21]
 ; CHECK0-NEXT:    bl foo
@@ -68,14 +65,13 @@ define i32 @word(%struct.b* %ctx, i32 %xor72) nounwind {
 ; CHECK3-LABEL: word:
 ; CHECK3:       // %bb.0:
 ; CHECK3-NEXT:    stp x30, x21, [sp, #-32]! // 16-byte Folded Spill
-; CHECK3-NEXT:    // kill: def $w1 killed $w1 def $x1
-; CHECK3-NEXT:    ubfx x21, x1, #9, #8
+; CHECK3-NEXT:    ubfx w21, w1, #9, #8
 ; CHECK3-NEXT:    stp x20, x19, [sp, #16] // 16-byte Folded Spill
 ; CHECK3-NEXT:    mov x19, x0
-; CHECK3-NEXT:    ldr w20, [x0, x21, lsl #2]
+; CHECK3-NEXT:    ldr w20, [x0, w21, uxtw #2]
 ; CHECK3-NEXT:    bl foo
 ; CHECK3-NEXT:    mov w0, w20
-; CHECK3-NEXT:    str w20, [x19, x21, lsl #2]
+; CHECK3-NEXT:    str w20, [x19, w21, uxtw #2]
 ; CHECK3-NEXT:    ldp x20, x19, [sp, #16] // 16-byte Folded Reload
 ; CHECK3-NEXT:    ldp x30, x21, [sp], #32 // 16-byte Folded Reload
 ; CHECK3-NEXT:    ret
@@ -93,10 +89,9 @@ define i64 @doubleword(%struct.c* %ctx, i32 %xor72) nounwind {
 ; CHECK0-LABEL: doubleword:
 ; CHECK0:       // %bb.0:
 ; CHECK0-NEXT:    stp x30, x21, [sp, #-32]! // 16-byte Folded Spill
-; CHECK0-NEXT:    // kill: def $w1 killed $w1 def $x1
-; CHECK0-NEXT:    ubfx x8, x1, #9, #8
+; CHECK0-NEXT:    ubfx w8, w1, #9, #8
 ; CHECK0-NEXT:    stp x20, x19, [sp, #16] // 16-byte Folded Spill
-; CHECK0-NEXT:    lsl x21, x8, #3
+; CHECK0-NEXT:    ubfiz x21, x8, #3, #32
 ; CHECK0-NEXT:    mov x19, x0
 ; CHECK0-NEXT:    ldr x20, [x0, x21]
 ; CHECK0-NEXT:    bl foo
@@ -109,14 +104,13 @@ define i64 @doubleword(%struct.c* %ctx, i32 %xor72) nounwind {
 ; CHECK3-LABEL: doubleword:
 ; CHECK3:       // %bb.0:
 ; CHECK3-NEXT:    stp x30, x21, [sp, #-32]! // 16-byte Folded Spill
-; CHECK3-NEXT:    // kill: def $w1 killed $w1 def $x1
-; CHECK3-NEXT:    ubfx x21, x1, #9, #8
+; CHECK3-NEXT:    ubfx w21, w1, #9, #8
 ; CHECK3-NEXT:    stp x20, x19, [sp, #16] // 16-byte Folded Spill
 ; CHECK3-NEXT:    mov x19, x0
-; CHECK3-NEXT:    ldr x20, [x0, x21, lsl #3]
+; CHECK3-NEXT:    ldr x20, [x0, w21, uxtw #3]
 ; CHECK3-NEXT:    bl foo
 ; CHECK3-NEXT:    mov x0, x20
-; CHECK3-NEXT:    str x20, [x19, x21, lsl #3]
+; CHECK3-NEXT:    str x20, [x19, w21, uxtw #3]
 ; CHECK3-NEXT:    ldp x20, x19, [sp, #16] // 16-byte Folded Reload
 ; CHECK3-NEXT:    ldp x30, x21, [sp], #32 // 16-byte Folded Reload
 ; CHECK3-NEXT:    ret

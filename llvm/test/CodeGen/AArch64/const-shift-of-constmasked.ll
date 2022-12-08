@@ -837,7 +837,8 @@ define i32 @test_i32_4294836224_mask_shl_1(i32 %a0) {
 define i64 @test_i64_2147483647_mask_lshr_1(i64 %a0) {
 ; CHECK-LABEL: test_i64_2147483647_mask_lshr_1:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    ubfx x0, x0, #1, #30
+; CHECK-NEXT:    and w8, w0, #0x7ffffffe
+; CHECK-NEXT:    lsr x0, x8, #1
 ; CHECK-NEXT:    ret
   %t0 = and i64 %a0, 2147483647
   %t1 = lshr i64 %t0, 1
@@ -926,7 +927,8 @@ define i64 @test_i64_18446744065119617024_mask_lshr_34(i64 %a0) {
 define i64 @test_i64_2147483647_mask_ashr_1(i64 %a0) {
 ; CHECK-LABEL: test_i64_2147483647_mask_ashr_1:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    ubfx x0, x0, #1, #30
+; CHECK-NEXT:    and w8, w0, #0x7ffffffe
+; CHECK-NEXT:    lsr x0, x8, #1
 ; CHECK-NEXT:    ret
   %t0 = and i64 %a0, 2147483647
   %t1 = ashr i64 %t0, 1
@@ -1015,8 +1017,8 @@ define i64 @test_i64_18446744065119617024_mask_ashr_34(i64 %a0) {
 define i64 @test_i64_2147483647_mask_shl_1(i64 %a0) {
 ; CHECK-LABEL: test_i64_2147483647_mask_shl_1:
 ; CHECK:       // %bb.0:
-; CHECK-NEXT:    and x8, x0, #0x7fffffff
-; CHECK-NEXT:    lsl x0, x8, #1
+; CHECK-NEXT:    and w8, w0, #0x7fffffff
+; CHECK-NEXT:    ubfiz x0, x8, #1, #32
 ; CHECK-NEXT:    ret
   %t0 = and i64 %a0, 2147483647
   %t1 = shl i64 %t0, 1

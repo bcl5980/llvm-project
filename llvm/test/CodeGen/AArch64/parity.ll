@@ -122,7 +122,7 @@ define i64 @parity_64(i64 %x) {
 ; CHECK-CSSC-LABEL: parity_64:
 ; CHECK-CSSC:       // %bb.0:
 ; CHECK-CSSC-NEXT:    cnt x8, x0
-; CHECK-CSSC-NEXT:    and x0, x8, #0x1
+; CHECK-CSSC-NEXT:    and w0, w8, #0x1
 ; CHECK-CSSC-NEXT:    ret
   %1 = tail call i64 @llvm.ctpop.i64(i64 %x)
   %2 = and i64 %1, 1
@@ -146,7 +146,7 @@ define i128 @parity_128(i128 %x) {
 ; CHECK-CSSC-NEXT:    eor x8, x0, x1
 ; CHECK-CSSC-NEXT:    mov x1, xzr
 ; CHECK-CSSC-NEXT:    cnt x8, x8
-; CHECK-CSSC-NEXT:    and x0, x8, #0x1
+; CHECK-CSSC-NEXT:    and w0, w8, #0x1
 ; CHECK-CSSC-NEXT:    ret
   %1 = tail call i128 @llvm.ctpop.i128(i128 %x)
   %2 = and i128 %1, 1

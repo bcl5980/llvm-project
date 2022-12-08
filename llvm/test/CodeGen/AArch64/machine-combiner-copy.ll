@@ -14,7 +14,7 @@ define void @fma_dup_f16(ptr noalias nocapture noundef readonly %A, half noundef
 ; CHECK-NEXT:    mov x9, xzr
 ; CHECK-NEXT:    b .LBB0_6
 ; CHECK-NEXT:  .LBB0_3: // %vector.ph
-; CHECK-NEXT:    and x9, x8, #0xfffffff0
+; CHECK-NEXT:    and w9, w8, #0xfffffff0
 ; CHECK-NEXT:    add x10, x1, #16
 ; CHECK-NEXT:    add x11, x0, #16
 ; CHECK-NEXT:    mov x12, x9

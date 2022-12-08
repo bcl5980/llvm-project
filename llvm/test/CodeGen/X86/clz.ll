@@ -623,7 +623,6 @@ define i64 @cttz_i64_zero_test(i64 %n) {
 ; X86-NOCMOV-LABEL: cttz_i64_zero_test:
 ; X86-NOCMOV:       # %bb.0:
 ; X86-NOCMOV-NEXT:    movl {{[0-9]+}}(%esp), %ecx
-; X86-NOCMOV-NOT:     rep
 ; X86-NOCMOV-NEXT:    bsfl {{[0-9]+}}(%esp), %edx
 ; X86-NOCMOV-NEXT:    movl $32, %eax
 ; X86-NOCMOV-NEXT:    je .LBB15_2
@@ -644,12 +643,10 @@ define i64 @cttz_i64_zero_test(i64 %n) {
 ; X86-CMOV-LABEL: cttz_i64_zero_test:
 ; X86-CMOV:       # %bb.0:
 ; X86-CMOV-NEXT:    movl {{[0-9]+}}(%esp), %eax
-; X86-CMOV-NOT:     rep
 ; X86-CMOV-NEXT:    bsfl {{[0-9]+}}(%esp), %ecx
 ; X86-CMOV-NEXT:    movl $32, %edx
 ; X86-CMOV-NEXT:    cmovnel %ecx, %edx
 ; X86-CMOV-NEXT:    addl $32, %edx
-; X86-CMOV-NOT:     rep
 ; X86-CMOV-NEXT:    bsfl %eax, %eax
 ; X86-CMOV-NEXT:    cmovel %edx, %eax
 ; X86-CMOV-NEXT:    xorl %edx, %edx
@@ -1087,7 +1084,7 @@ define i32 @PR47603_zext(i32 %a0, ptr %a1) {
 ; X64-CLZ-LABEL: PR47603_zext:
 ; X64-CLZ:       # %bb.0:
 ; X64-CLZ-NEXT:    lzcntl %edi, %eax
-; X64-CLZ-NEXT:    xorq $31, %rax
+; X64-CLZ-NEXT:    xorl $31, %eax
 ; X64-CLZ-NEXT:    movsbl (%rsi,%rax), %eax
 ; X64-CLZ-NEXT:    retq
   %ctlz = tail call i32 @llvm.ctlz.i32(i32 %a0, i1 true)
@@ -1102,13 +1099,11 @@ define i32 @PR47603_zext(i32 %a0, ptr %a1) {
 define i32 @cttz_i32_osize(i32 %x) optsize {
 ; X86-LABEL: cttz_i32_osize:
 ; X86:       # %bb.0:
-; X86-NOT:     rep
 ; X86-NEXT:    bsfl {{[0-9]+}}(%esp), %eax
 ; X86-NEXT:    retl
 ;
 ; X64-LABEL: cttz_i32_osize:
 ; X64:       # %bb.0:
-; X64-NOT:     rep
 ; X64-NEXT:    bsfl %edi, %eax
 ; X64-NEXT:    retq
 ;
@@ -1128,13 +1123,11 @@ define i32 @cttz_i32_osize(i32 %x) optsize {
 define i32 @cttz_i32_msize(i32 %x) minsize {
 ; X86-LABEL: cttz_i32_msize:
 ; X86:       # %bb.0:
-; X86-NOT:     rep
 ; X86-NEXT:    bsfl {{[0-9]+}}(%esp), %eax
 ; X86-NEXT:    retl
 ;
 ; X64-LABEL: cttz_i32_msize:
 ; X64:       # %bb.0:
-; X64-NOT:     rep
 ; X64-NEXT:    bsfl %edi, %eax
 ; X64-NEXT:    retq
 ;

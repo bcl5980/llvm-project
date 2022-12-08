@@ -151,15 +151,13 @@ define amdgpu_ps i8 addrspace(1)* @s_ptrmask_global_variable_i64(i8 addrspace(1)
 define amdgpu_ps i8 addrspace(1)* @s_ptrmask_global_variable_i32(i8 addrspace(1)* inreg %ptr, i32 inreg %mask) {
 ; GCN-LABEL: s_ptrmask_global_variable_i32:
 ; GCN:       ; %bb.0:
-; GCN-NEXT:    s_mov_b32 s5, 0
-; GCN-NEXT:    s_and_b64 s[0:1], s[2:3], s[4:5]
+; GCN-NEXT:    s_and_b32 s0, s2, s4
 ; GCN-NEXT:    s_mov_b32 s1, 0
 ; GCN-NEXT:    ; return to shader part epilog
 ;
 ; GFX10PLUS-LABEL: s_ptrmask_global_variable_i32:
 ; GFX10PLUS:       ; %bb.0:
-; GFX10PLUS-NEXT:    s_mov_b32 s5, 0
-; GFX10PLUS-NEXT:    s_and_b64 s[0:1], s[2:3], s[4:5]
+; GFX10PLUS-NEXT:    s_and_b32 s0, s2, s4
 ; GFX10PLUS-NEXT:    s_mov_b32 s1, 0
 ; GFX10PLUS-NEXT:    ; return to shader part epilog
   %masked = call i8 addrspace(1)* @llvm.ptrmask.p1i8.i32(i8 addrspace(1)* %ptr, i32 %mask)
@@ -169,18 +167,16 @@ define amdgpu_ps i8 addrspace(1)* @s_ptrmask_global_variable_i32(i8 addrspace(1)
 define amdgpu_ps i8 addrspace(1)* @s_ptrmask_global_variable_i16(i8 addrspace(1)* inreg %ptr, i16 inreg %mask) {
 ; GCN-LABEL: s_ptrmask_global_variable_i16:
 ; GCN:       ; %bb.0:
-; GCN-NEXT:    s_and_b32 s0, s4, 0xffff
-; GCN-NEXT:    s_mov_b32 s1, 0
-; GCN-NEXT:    s_and_b64 s[0:1], s[2:3], s[0:1]
+; GCN-NEXT:    s_and_b32 s0, 0xffff, s4
+; GCN-NEXT:    s_and_b32 s0, s2, s0
 ; GCN-NEXT:    s_mov_b32 s1, 0
 ; GCN-NEXT:    ; return to shader part epilog
 ;
 ; GFX10PLUS-LABEL: s_ptrmask_global_variable_i16:
 ; GFX10PLUS:       ; %bb.0:
+; GFX10PLUS-NEXT:    s_and_b32 s0, 0xffff, s4
 ; GFX10PLUS-NEXT:    s_mov_b32 s1, 0
-; GFX10PLUS-NEXT:    s_and_b32 s0, s4, 0xffff
-; GFX10PLUS-NEXT:    s_and_b64 s[0:1], s[2:3], s[0:1]
-; GFX10PLUS-NEXT:    s_mov_b32 s1, 0
+; GFX10PLUS-NEXT:    s_and_b32 s0, s2, s0
 ; GFX10PLUS-NEXT:    ; return to shader part epilog
   %masked = call i8 addrspace(1)* @llvm.ptrmask.p1i8.i16(i8 addrspace(1)* %ptr, i16 %mask)
   ret i8 addrspace(1)* %masked

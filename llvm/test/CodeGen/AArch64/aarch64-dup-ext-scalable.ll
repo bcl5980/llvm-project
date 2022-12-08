@@ -247,8 +247,7 @@ entry:
 define <vscale x 2 x i64> @dupzext_v2i8_v2i64(i8 %src, <vscale x 2 x i64> %b) {
 ; CHECK-LABEL: dupzext_v2i8_v2i64:
 ; CHECK:       // %bb.0: // %entry
-; CHECK-NEXT:    // kill: def $w0 killed $w0 def $x0
-; CHECK-NEXT:    and x8, x0, #0xff
+; CHECK-NEXT:    and w8, w0, #0xff
 ; CHECK-NEXT:    ptrue p0.d
 ; CHECK-NEXT:    mov z1.d, x8
 ; CHECK-NEXT:    mul z0.d, p0/m, z0.d, z1.d
@@ -296,8 +295,7 @@ entry:
 define <vscale x 2 x i64> @dupzext_v2i16_v2i64(i16 %src, <vscale x 2 x i64> %b) {
 ; CHECK-LABEL: dupzext_v2i16_v2i64:
 ; CHECK:       // %bb.0: // %entry
-; CHECK-NEXT:    // kill: def $w0 killed $w0 def $x0
-; CHECK-NEXT:    and x8, x0, #0xffff
+; CHECK-NEXT:    and w8, w0, #0xffff
 ; CHECK-NEXT:    ptrue p0.d
 ; CHECK-NEXT:    mov z1.d, x8
 ; CHECK-NEXT:    mul z0.d, p0/m, z0.d, z1.d

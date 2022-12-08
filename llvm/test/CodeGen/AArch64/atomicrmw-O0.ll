@@ -527,10 +527,7 @@ define i64 @test_rmw_nand_64(i64* %dst)   {
 ; NOLSE-NEXT:    // Child Loop BB8_2 Depth 2
 ; NOLSE-NEXT:    ldr x9, [sp, #24] // 8-byte Folded Reload
 ; NOLSE-NEXT:    ldr x11, [sp, #16] // 8-byte Folded Reload
-; NOLSE-NEXT:    mov w8, w9
-; NOLSE-NEXT:    mvn w10, w8
-; NOLSE-NEXT:    // implicit-def: $x8
-; NOLSE-NEXT:    mov w8, w10
+; NOLSE-NEXT:    mvn x8, x9
 ; NOLSE-NEXT:    orr x12, x8, #0xfffffffffffffffe
 ; NOLSE-NEXT:  .LBB8_2: // %atomicrmw.start
 ; NOLSE-NEXT:    // Parent Loop BB8_1 Depth=1
@@ -568,10 +565,7 @@ define i64 @test_rmw_nand_64(i64* %dst)   {
 ; LSE-NEXT:    // =>This Inner Loop Header: Depth=1
 ; LSE-NEXT:    ldr x9, [sp, #24] // 8-byte Folded Reload
 ; LSE-NEXT:    ldr x11, [sp, #16] // 8-byte Folded Reload
-; LSE-NEXT:    mov w8, w9
-; LSE-NEXT:    mvn w10, w8
-; LSE-NEXT:    // implicit-def: $x8
-; LSE-NEXT:    mov w8, w10
+; LSE-NEXT:    mvn x8, x9
 ; LSE-NEXT:    orr x10, x8, #0xfffffffffffffffe
 ; LSE-NEXT:    mov x8, x9
 ; LSE-NEXT:    casal x8, x10, [x11]
@@ -608,10 +602,7 @@ define i128 @test_rmw_nand_128(i128* %dst)   {
 ; NOLSE-NEXT:    ldr x13, [sp, #40] // 8-byte Folded Reload
 ; NOLSE-NEXT:    ldr x11, [sp, #32] // 8-byte Folded Reload
 ; NOLSE-NEXT:    ldr x9, [sp, #24] // 8-byte Folded Reload
-; NOLSE-NEXT:    mov w8, w11
-; NOLSE-NEXT:    mvn w10, w8
-; NOLSE-NEXT:    // implicit-def: $x8
-; NOLSE-NEXT:    mov w8, w10
+; NOLSE-NEXT:    mvn x8, x11
 ; NOLSE-NEXT:    orr x14, x8, #0xfffffffffffffffe
 ; NOLSE-NEXT:    mov x15, #-1
 ; NOLSE-NEXT:  .LBB9_2: // %atomicrmw.start
@@ -667,10 +658,7 @@ define i128 @test_rmw_nand_128(i128* %dst)   {
 ; LSE-NEXT:    ldr x8, [sp, #24] // 8-byte Folded Reload
 ; LSE-NEXT:    mov x0, x10
 ; LSE-NEXT:    mov x1, x11
-; LSE-NEXT:    mov w9, w10
-; LSE-NEXT:    mvn w12, w9
-; LSE-NEXT:    // implicit-def: $x9
-; LSE-NEXT:    mov w9, w12
+; LSE-NEXT:    mvn x9, x10
 ; LSE-NEXT:    orr x2, x9, #0xfffffffffffffffe
 ; LSE-NEXT:    mov x9, #-1
 ; LSE-NEXT:    // kill: def $x2 killed $x2 def $x2_x3

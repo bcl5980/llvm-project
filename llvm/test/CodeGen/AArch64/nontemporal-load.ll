@@ -476,49 +476,53 @@ define <4 x i65> @test_ldnp_v4i65(<4 x i65>* %A) {
 ; CHECK-NEXT:    ldp x8, x9, [x0, #8]
 ; CHECK-NEXT:    ldr d0, [x0]
 ; CHECK-NEXT:    ldr x10, [x0, #24]
-; CHECK-NEXT:    and x1, x8, #0x1
+; CHECK-NEXT:    and w1, w8, #0x1
 ; CHECK-NEXT:    ldrb w11, [x0, #32]
 ; CHECK-NEXT:    extr x2, x9, x8, #1
 ; CHECK-NEXT:    extr x4, x10, x9, #2
 ; CHECK-NEXT:    extr x6, x11, x10, #3
-; CHECK-NEXT:    ubfx x3, x9, #1, #1
+; CHECK-NEXT:    ubfx w3, w9, #1, #1
 ; CHECK-NEXT:    mov.d v0[1], x1
-; CHECK-NEXT:    ubfx x5, x10, #2, #1
-; CHECK-NEXT:    ubfx x7, x11, #3, #1
+; CHECK-NEXT:    ubfx w5, w10, #2, #1
+; CHECK-NEXT:    ubfx w7, w11, #3, #1
 ; CHECK-NEXT:    fmov x0, d0
 ; CHECK-NEXT:    ret
 ;
 ; CHECK-BE-LABEL: test_ldnp_v4i65:
 ; CHECK-BE:       // %bb.0:
-; CHECK-BE-NEXT:    ldp x10, x9, [x0, #16]
-; CHECK-BE-NEXT:    ldp x12, x11, [x0]
-; CHECK-BE-NEXT:    ldrb w8, [x0, #32]
-; CHECK-BE-NEXT:    lsr x13, x10, #56
+; CHECK-BE-NEXT:    ldp x9, x8, [x0]
+; CHECK-BE-NEXT:    ldp x12, x11, [x0, #16]
+; CHECK-BE-NEXT:    ldrb w10, [x0, #32]
+; CHECK-BE-NEXT:    extr x13, x9, x8, #56
+; CHECK-BE-NEXT:    lsr x16, x8, #56
+; CHECK-BE-NEXT:    extr x15, x8, x12, #56
+; CHECK-BE-NEXT:    ubfx x8, x8, #58, #1
+; CHECK-BE-NEXT:    mov w8, w8
+; CHECK-BE-NEXT:    lsr x9, x9, #56
+; CHECK-BE-NEXT:    orr x7, x10, x11, lsl #8
+; CHECK-BE-NEXT:    extr x10, x12, x11, #56
 ; CHECK-BE-NEXT:    lsr x14, x12, #56
-; CHECK-BE-NEXT:    extr x15, x11, x10, #56
-; CHECK-BE-NEXT:    orr x7, x8, x9, lsl #8
-; CHECK-BE-NEXT:    extr x8, x10, x9, #56
-; CHECK-BE-NEXT:    extr x9, x12, x11, #56
-; CHECK-BE-NEXT:    lsr x12, x12, #59
-; CHECK-BE-NEXT:    ubfx x10, x10, #57, #1
-; CHECK-BE-NEXT:    extr x5, x13, x8, #1
-; CHECK-BE-NEXT:    extr x1, x14, x9, #3
-; CHECK-BE-NEXT:    ubfx x9, x11, #58, #1
-; CHECK-BE-NEXT:    fmov d0, x12
-; CHECK-BE-NEXT:    and x12, x8, #0x1
-; CHECK-BE-NEXT:    lsr x11, x11, #56
-; CHECK-BE-NEXT:    fmov d2, x10
-; CHECK-BE-NEXT:    fmov d1, x9
-; CHECK-BE-NEXT:    extr x3, x11, x15, #2
-; CHECK-BE-NEXT:    fmov d3, x12
-; CHECK-BE-NEXT:    mov v0.d[1], x1
-; CHECK-BE-NEXT:    mov v2.d[1], x5
-; CHECK-BE-NEXT:    mov v1.d[1], x3
-; CHECK-BE-NEXT:    mov v3.d[1], x7
-; CHECK-BE-NEXT:    fmov x0, d0
-; CHECK-BE-NEXT:    fmov x4, d2
-; CHECK-BE-NEXT:    fmov x2, d1
-; CHECK-BE-NEXT:    fmov x6, d3
+; CHECK-BE-NEXT:    ubfx x11, x11, #56, #1
+; CHECK-BE-NEXT:    ubfx x12, x12, #57, #1
+; CHECK-BE-NEXT:    extr x3, x16, x15, #2
+; CHECK-BE-NEXT:    ubfx x15, x9, #3, #29
+; CHECK-BE-NEXT:    mov w12, w12
+; CHECK-BE-NEXT:    mov w11, w11
+; CHECK-BE-NEXT:    fmov d0, x8
+; CHECK-BE-NEXT:    mov w8, w15
+; CHECK-BE-NEXT:    extr x5, x14, x10, #1
+; CHECK-BE-NEXT:    fmov d1, x12
+; CHECK-BE-NEXT:    extr x1, x9, x13, #3
+; CHECK-BE-NEXT:    fmov d2, x11
+; CHECK-BE-NEXT:    fmov d3, x8
+; CHECK-BE-NEXT:    mov v0.d[1], x3
+; CHECK-BE-NEXT:    mov v1.d[1], x5
+; CHECK-BE-NEXT:    mov v2.d[1], x7
+; CHECK-BE-NEXT:    mov v3.d[1], x1
+; CHECK-BE-NEXT:    fmov x2, d0
+; CHECK-BE-NEXT:    fmov x4, d1
+; CHECK-BE-NEXT:    fmov x6, d2
+; CHECK-BE-NEXT:    fmov x0, d3
 ; CHECK-BE-NEXT:    ret
   %lv = load <4 x i65>, <4 x i65>* %A, align 8, !nontemporal !0
   ret <4 x i65> %lv

@@ -8,7 +8,6 @@ define i1 @test14(i8 %X) {
 ; CHECK-LABEL: test14:
 ; CHECK:       // %bb.0:
 ; CHECK-NEXT:    mov w8, #-113
-; CHECK-NEXT:    // kill: def $w0 killed $w0 def $x0
 ; CHECK-NEXT:    lsl w8, w8, w0
 ; CHECK-NEXT:    sxtb w8, w8
 ; CHECK-NEXT:    cmp w8, #0
