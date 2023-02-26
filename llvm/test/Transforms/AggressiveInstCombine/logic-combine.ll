@@ -106,6 +106,17 @@ define i8 @leaf2_ret_and(i8 %a, i8 %b)  {
   ret i8 %and.ab.a
 }
 
+define i16 @leaf2_ret_xor(i16 %a, i16 %b)  {
+; CHECK-LABEL: @leaf2_ret_xor(
+; CHECK-NEXT:    [[TMP1:%.*]] = xor i16 [[B:%.*]], [[A:%.*]]
+; CHECK-NEXT:    ret i16 [[TMP1]]
+;
+  %or.ab = or i16 %a, %b
+  %and.ab = and i16 %a, %b
+  %xor = xor i16 %or.ab, %and.ab
+  ret i16 %xor
+}
+
 define i8 @leaf3_complex_ret_const_false(i8 %a, i8 %b, i8 %c)  {
 ; CHECK-LABEL: @leaf3_complex_ret_const_false(
 ; CHECK-NEXT:    ret i8 0
@@ -442,6 +453,63 @@ define i1 @leaf4_select_poison_masked_complex_ret_leaf2(i1 %a, i1 %b, i1 %c)  {
   %or4 = select i1 %or3, i1 true, i1 %b
   %cond = xor i1 %xor, %or4
   ret i1 %cond
+}
+
+define i7 @leaf4_complex_ret_xor(i7 %a, i7 %b, i7 %c, i7 %d)  {
+; CHECK-LABEL: @leaf4_complex_ret_xor(
+; CHECK-NEXT:    [[XOR_BD:%.*]] = xor i7 [[B:%.*]], [[D:%.*]]
+; CHECK-NEXT:    ret i7 [[XOR_BD]]
+;
+  %bd = and i7 %b, %d
+  %xor = xor i7 %bd, %c
+  %not.bd = xor i7 %xor, -1
+  %xor.ab = xor i7 %a, %b
+  %or1 = or i7 %xor.ab, %c
+  %or2 = or i7 %or1, %not.bd
+  %or3 = or i7 %or2, %a
+  %and = and i7 %or3, %b
+  %xor.bd = xor i7 %and, %d
+  ret i7 %xor.bd
+}
+
+define i7 @leaf4_complex_ret_xor_oneside_and(i7 %a, i7 %b, i7 %c, i7 %d)  {
+; CHECK-LABEL: @leaf4_complex_ret_xor_oneside_and(
+; CHECK-NEXT:    [[AND2:%.*]] = and i7 [[D:%.*]], [[B:%.*]]
+; CHECK-NEXT:    [[XOR_BD:%.*]] = xor i7 [[B]], [[AND2]]
+; CHECK-NEXT:    ret i7 [[XOR_BD]]
+;
+  %bd = and i7 %b, %d
+  %xor = xor i7 %bd, %c
+  %not.bd = xor i7 %xor, -1
+  %xor.ab = xor i7 %a, %b
+  %or1 = or i7 %xor.ab, %c
+  %or2 = or i7 %or1, %not.bd
+  %or3 = or i7 %or2, %a
+  %and = and i7 %or3, %b
+  %and2 = and i7 %d, %b
+  %xor.bd = xor i7 %and, %and2
+  ret i7 %xor.bd
+}
+
+define i7 @leaf4_complex_ret_xor_both_and(i7 %a, i7 %b, i7 %c, i7 %d)  {
+; CHECK-LABEL: @leaf4_complex_ret_xor_both_and(
+; CHECK-NEXT:    [[AND2:%.*]] = and i7 [[A:%.*]], [[C:%.*]]
+; CHECK-NEXT:    [[AND3:%.*]] = and i7 [[D:%.*]], [[B:%.*]]
+; CHECK-NEXT:    [[XOR_BD:%.*]] = xor i7 [[AND2]], [[AND3]]
+; CHECK-NEXT:    ret i7 [[XOR_BD]]
+;
+  %bd = and i7 %b, %d
+  %xor = xor i7 %bd, %c
+  %not.bd = xor i7 %xor, -1
+  %xor.ab = xor i7 %a, %b
+  %or1 = or i7 %xor.ab, %c
+  %or2 = or i7 %or1, %not.bd
+  %or3 = or i7 %or2, %a
+  %and = and i7 %or3, %b
+  %and2 = and i7 %a, %c
+  %and3 = and i7 %d, %and
+  %xor.bd = xor i7 %and2, %and3
+  ret i7 %xor.bd
 }
 
 declare void @use8(i8)

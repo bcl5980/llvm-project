@@ -239,19 +239,41 @@ Value *LogicCombiner::logicalOpToValue(LogicalOpNode *Node) {
 
   Instruction *I = cast<Instruction>(Node->getValue());
   Type *Ty = I->getType();
+  IRBuilder<> Builder(I);
   if (Expr.size() == 1) {
     uint64_t LeafBits = *Expr.begin();
     unsigned InstCnt = popcount(LeafBits) - 1;
     // TODO: For now we assume we can't reuse any node from old instruction.
     // Later we can search if we can reuse the node is not one use.
-    if (Node->worthToCombine(InstCnt)) {
-      IRBuilder<> Builder(I);
+    if (Node->worthToCombine(InstCnt))
       return buildAndChain(Builder, Ty, LeafBits);
+  }
+
+  if (Expr.size() == 2) {
+    uint64_t LHS = *Expr.begin();
+    uint64_t RHS = *(++Expr.begin());
+    uint64_t CommonAnd = LHS & RHS;
+    if (CommonAnd) {
+      LHS &= ~CommonAnd;
+      if (LHS == 0)
+        LHS = LogicalExpr::ExprAllOne;
+      RHS &= ~CommonAnd;
+      if (RHS == 0)
+        RHS = LogicalExpr::ExprAllOne;
+    }
+    unsigned InstCnt = popcount(CommonAnd) + popcount(LHS) + popcount(RHS) - 1;
+    if (Node->worthToCombine(InstCnt)) {
+      Value *LHSV = buildAndChain(Builder, Ty, LHS);
+      Value *RHSV = buildAndChain(Builder, Ty, RHS);
+      Value *Ret = Builder.CreateXor(LHSV, RHSV);
+      if (CommonAnd)
+        Ret = Builder.CreateAnd(Ret, buildAndChain(Builder, Ty, CommonAnd));
+      return Ret;
     }
   }
 
-  // TODO: find the simplest form from logical expression when it is not
-  // only an "and" chain.
+  // TODO: find the simplest form from logical expression when it has more than
+  // 2 and chains.
 
   return nullptr;
 }
