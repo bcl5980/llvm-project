@@ -838,9 +838,9 @@ static bool foldBitwiseLogic(Function &F, DominatorTree &DT) {
     // finding a solution. We could split the combiner based on types to make
     // the code more efficient, adjust the value of max depth/values, or use
     // APInt to support tracking more than 63 leaf values.
-    LogicCombiner LC;
     for (Instruction &I : BB) {
       if (I.isBitwiseLogicOp()) {
+        LogicCombiner LC;
         Value *NewV = LC.simplify(&I);
         if (NewV) {
           MadeChange = true;
