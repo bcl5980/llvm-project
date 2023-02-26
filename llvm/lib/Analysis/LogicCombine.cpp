@@ -89,7 +89,7 @@ void LogicalOpNode::print(raw_ostream &OS) const {
     printAndChain(OS, *I);
   }
 
-  OS << "\n";
+  OS << "\nWeight: " << Weight << "; OneUseWeight: " << OneUseWeight << ";\n\n";
 }
 
 void LogicCombiner::clear() {
@@ -114,8 +114,8 @@ LogicalOpNode *LogicCombiner::visitLeafNode(Value *Val, unsigned Depth) {
   }
   if (ExprVal != LogicalExpr::ExprAllOne && ExprVal != 0)
     LeafValues.insert(Val);
-  LogicalOpNode *Node =
-      new (Alloc.Allocate()) LogicalOpNode(this, Val, LogicalExpr(ExprVal));
+  LogicalOpNode *Node = new (Alloc.Allocate())
+      LogicalOpNode(this, Val, LogicalExpr(ExprVal), 0, 0);
   LogicalOpNodes[Val] = Node;
   return Node;
 }
@@ -132,16 +132,22 @@ LogicalOpNode *LogicCombiner::visitBinOp(BinaryOperator *BO, unsigned Depth) {
   if (RHS == nullptr)
     return nullptr;
 
-  LogicalOpNode *Node;
+  // TODO: We can reduce the weight if the node can be simplified even if
+  // it is not the root node.
+  unsigned Weight = LHS->getWeight() + RHS->getWeight() + 1;
+  unsigned OneUseWeight = Weight;
+  if (BO->hasOneUse())
+    OneUseWeight = LHS->getOneUseWeight() + RHS->getOneUseWeight();
+
+  LogicalExpr NewExpr;
   if (BO->getOpcode() == Instruction::And)
-    Node = new (Alloc.Allocate())
-        LogicalOpNode(this, BO, LHS->getExpr() & RHS->getExpr());
+    NewExpr = LHS->getExpr() & RHS->getExpr();
   else if (BO->getOpcode() == Instruction::Or)
-    Node = new (Alloc.Allocate())
-        LogicalOpNode(this, BO, LHS->getExpr() | RHS->getExpr());
+    NewExpr = LHS->getExpr() | RHS->getExpr();
   else
-    Node = new (Alloc.Allocate())
-        LogicalOpNode(this, BO, LHS->getExpr() ^ RHS->getExpr());
+    NewExpr = LHS->getExpr() ^ RHS->getExpr();
+  LogicalOpNode *Node = new (Alloc.Allocate())
+      LogicalOpNode(this, BO, NewExpr, Weight, OneUseWeight);
   LogicalOpNodes[BO] = Node;
   return Node;
 }
@@ -172,22 +178,47 @@ Value *LogicCombiner::logicalOpToValue(LogicalOpNode *Node) {
   if (Expr.size() == 0)
     return Constant::getNullValue(Node->getValue()->getType());
 
+  Instruction *I = cast<Instruction>(Node->getValue());
+  Type *Ty = I->getType();
   if (Expr.size() == 1) {
     uint64_t LeafBits = *Expr.begin();
-    if (LeafBits == 0)
-      return Constant::getNullValue(Node->getValue()->getType());
-    // ExprAllOne is not in the LeafValues
-    if (LeafBits == LogicalExpr::ExprAllOne)
-      return Constant::getAllOnesValue(Node->getValue()->getType());
-
-    if (popcount(LeafBits) == 1)
-      return LeafValues[Log2_64(LeafBits)];
+    unsigned InstCnt = popcount(LeafBits) - 1;
+    // TODO: For now we assume we can't reuse any node from old instruction.
+    // Later we can search if we can reuse the node is not one use.
+    if (Node->worthToCombine(InstCnt)) {
+      IRBuilder<> Builder(I);
+      return buildAndChain(Builder, Ty, LeafBits);
+    }
   }
 
   // TODO: find the simplest form from logical expression when it is not
   // only an "and" chain.
 
   return nullptr;
+}
+
+Value *LogicCombiner::buildAndChain(IRBuilder<> &Builder, Type *Ty,
+                                    uint64_t LeafBits) {
+  if (LeafBits == 0)
+    return Constant::getNullValue(Ty);
+
+  // ExprAllOne is not in the LeafValues
+  if (LeafBits == LogicalExpr::ExprAllOne)
+    return Constant::getAllOnesValue(Ty);
+
+  unsigned LeafCnt = popcount(LeafBits);
+  if (LeafCnt == 1)
+    return LeafValues[Log2_64(LeafBits)];
+
+  unsigned LeafIdx = countr_zero(LeafBits);
+  Value *AndChain = LeafValues[LeafIdx];
+  LeafBits -= (1ULL << LeafIdx);
+  for (unsigned I = 1; I < LeafCnt; I++) {
+    LeafIdx = countr_zero(LeafBits);
+    AndChain = Builder.CreateAnd(AndChain, LeafValues[LeafIdx]);
+    LeafBits -= (1ULL << LeafIdx);
+  }
+  return AndChain;
 }
 
 Value *LogicCombiner::simplify(Value *Root) {

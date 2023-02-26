@@ -96,6 +96,16 @@ define i1 @leaf2_type_is_i1(i1 %a, i1 %b) {
   ret i1 %or
 }
 
+define i8 @leaf2_ret_and(i8 %a, i8 %b)  {
+; CHECK-LABEL: @leaf2_ret_and(
+; CHECK-NEXT:    [[TMP1:%.*]] = and i8 [[A:%.*]], [[B:%.*]]
+; CHECK-NEXT:    ret i8 [[TMP1]]
+;
+  %ab = and i8 %a, %b
+  %and.ab.a = and i8 %ab, %a
+  ret i8 %and.ab.a
+}
+
 define i8 @leaf3_complex_ret_const_false(i8 %a, i8 %b, i8 %c)  {
 ; CHECK-LABEL: @leaf3_complex_ret_const_false(
 ; CHECK-NEXT:    ret i8 0
@@ -119,6 +129,36 @@ define i8 @leaf3_complex_ret_leaf(i8 %a, i8 %b, i8 %c) {
   %and = and i8 %not.bc, %a
   %cond = xor i8 %and, %or
   ret i8 %cond
+}
+
+define i32 @leaf3_ret_and_chain(i32 %a, i32 %b, i32 %c)  {
+; CHECK-LABEL: @leaf3_ret_and_chain(
+; CHECK-NEXT:    [[TMP1:%.*]] = and i32 [[A:%.*]], [[B:%.*]]
+; CHECK-NEXT:    [[TMP2:%.*]] = and i32 [[TMP1]], [[C:%.*]]
+; CHECK-NEXT:    ret i32 [[TMP2]]
+;
+  %ab = and i32 %a, %b
+  %abc = and i32 %ab, %c
+  %aabc = and i32 %abc, %a
+  %aabcc = and i32 %aabc, %c
+  ret i32 %aabcc
+}
+
+; negative test, extra use cost is equal than it can save
+
+define i32 @leaf3_ret_and_chain_extra_use(i32 %a, i32 %b, i32 %c)  {
+; CHECK-LABEL: @leaf3_ret_and_chain_extra_use(
+; CHECK-NEXT:    [[AB:%.*]] = and i32 [[A:%.*]], [[B:%.*]]
+; CHECK-NEXT:    [[BC:%.*]] = and i32 [[B]], [[C:%.*]]
+; CHECK-NEXT:    call void @use32(i32 [[BC]])
+; CHECK-NEXT:    [[ABBC:%.*]] = and i32 [[AB]], [[BC]]
+; CHECK-NEXT:    ret i32 [[ABBC]]
+;
+  %ab = and i32 %a, %b
+  %bc = and i32 %b, %c
+  call void @use32(i32 %bc)
+  %abbc = and i32 %ab, %bc
+  ret i32 %abbc
 }
 
 define i8 @leaf4_ret_const_true(i8 %a, i8 %b, i8 %c, i8 %d)  {
@@ -247,4 +287,47 @@ define i8 @leaf8_negative_leafnum_const(i8 %a1, i8 %a2)  {
   ret i8 %r
 }
 
+define i32 @leaf4_complex_ret_and_chain(i32 %a, i32 %b, i32 %c, i32 %d)  {
+; CHECK-LABEL: @leaf4_complex_ret_and_chain(
+; CHECK-NEXT:    [[AND2:%.*]] = and i32 [[B:%.*]], [[D:%.*]]
+; CHECK-NEXT:    ret i32 [[AND2]]
+;
+  %bd = and i32 %b, %d
+  %xor = xor i32 %bd, %c
+  %not.bd = xor i32 %xor, -1
+  %xor.ab = xor i32 %a, %b
+  %or1 = or i32 %xor.ab, %c
+  %or2 = or i32 %or1, %not.bd
+  %or3 = or i32 %or2, %a
+  %and = and i32 %or3, %b
+  %and2 = and i32 %and, %d
+  ret i32 %and2
+}
+
+define i32 @leaf4_complex_ret_and_chain_extra_use(i32 %a, i32 %b, i32 %c, i32 %d)  {
+; CHECK-LABEL: @leaf4_complex_ret_and_chain_extra_use(
+; CHECK-NEXT:    [[BD:%.*]] = and i32 [[B:%.*]], [[D:%.*]]
+; CHECK-NEXT:    [[XOR:%.*]] = xor i32 [[BD]], [[C:%.*]]
+; CHECK-NEXT:    [[NOT_BD:%.*]] = xor i32 [[XOR]], -1
+; CHECK-NEXT:    [[XOR_AB:%.*]] = xor i32 [[A:%.*]], [[B]]
+; CHECK-NEXT:    [[OR1:%.*]] = or i32 [[XOR_AB]], [[C]]
+; CHECK-NEXT:    [[OR2:%.*]] = or i32 [[OR1]], [[NOT_BD]]
+; CHECK-NEXT:    [[AND2:%.*]] = and i32 [[B]], [[D]]
+; CHECK-NEXT:    call void @use32(i32 [[OR2]])
+; CHECK-NEXT:    ret i32 [[AND2]]
+;
+  %bd = and i32 %b, %d
+  %xor = xor i32 %bd, %c
+  %not.bd = xor i32 %xor, -1
+  %xor.ab = xor i32 %a, %b
+  %or1 = or i32 %xor.ab, %c
+  %or2 = or i32 %or1, %not.bd
+  %or3 = or i32 %or2, %a
+  %and = and i32 %or3, %b
+  %and2 = and i32 %and, %d
+  call void @use32(i32 %or2)
+  ret i32 %and2
+}
+
 declare void @use8(i8)
+declare void @use32(i32)

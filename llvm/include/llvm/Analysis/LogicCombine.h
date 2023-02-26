@@ -10,8 +10,7 @@
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SetVector.h"
 #include "llvm/ADT/Statistic.h"
-#include "llvm/IR/InstrTypes.h"
-#include "llvm/IR/Instruction.h"
+#include "llvm/IR/IRBuilder.h"
 #include "llvm/Support/Allocator.h"
 
 namespace llvm {
@@ -23,18 +22,26 @@ private:
   LogicCombiner *Helper;
   Value *Val;
   LogicalExpr Expr;
-  // TODO: Add weight to measure cost for more than one use value
+  unsigned Weight;
+  unsigned OneUseWeight;
 
   void printAndChain(raw_ostream &OS, uint64_t LeafBits) const;
 
 public:
-  LogicalOpNode(LogicCombiner *OpsHelper, Value *SrcVal,
-                const LogicalExpr &SrcExpr)
-      : Helper(OpsHelper), Val(SrcVal), Expr(SrcExpr) {}
+  LogicalOpNode(LogicCombiner *Helper, Value *Val, const LogicalExpr &SrcExpr,
+                unsigned Weight, unsigned OneUseWeight)
+      : Helper(Helper), Val(Val), Expr(SrcExpr), Weight(Weight),
+        OneUseWeight(OneUseWeight) {}
   ~LogicalOpNode() {}
 
   Value *getValue() const { return Val; }
   const LogicalExpr &getExpr() const { return Expr; }
+  unsigned getWeight() const { return Weight; }
+  unsigned getOneUseWeight() const { return OneUseWeight; }
+
+  bool worthToCombine(unsigned InstCnt) const {
+    return (OneUseWeight + InstCnt) < Weight;
+  }
   void print(raw_ostream &OS) const;
 };
 
@@ -58,6 +65,7 @@ private:
   LogicalOpNode *visitBinOp(BinaryOperator *BO, unsigned Depth);
   LogicalOpNode *getLogicalOpNode(Value *Val, unsigned Depth = 0);
   Value *logicalOpToValue(LogicalOpNode *Node);
+  Value *buildAndChain(IRBuilder<> &Builder, Type *Ty, uint64_t LeafBits);
 };
 
 inline raw_ostream &operator<<(raw_ostream &OS, const LogicalOpNode &I) {
