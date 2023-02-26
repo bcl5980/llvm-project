@@ -99,6 +99,7 @@ void LogicalOpNode::print(raw_ostream &OS) const {
 
 void LogicCombiner::clear() {
   LeafsMayPoison = 0;
+  ConstantLeafs = 0;
   LogicalOpNodes.clear();
   LeafValues.clear();
 }
@@ -121,6 +122,8 @@ LogicalOpNode *LogicCombiner::visitLeafNode(Value *Val, unsigned Depth) {
   if (ExprVal != LogicalExpr::ExprAllOne && ExprVal != 0) {
     if (!isGuaranteedNotToBeUndefOrPoison(Val))
       LeafsMayPoison |= ExprVal;
+    if (isa<Constant>(Val))
+      ConstantLeafs |= ExprVal;
     LeafValues.insert(Val);
   }
   LogicalOpNode *Node = new (Alloc.Allocate())
@@ -155,6 +158,7 @@ LogicalOpNode *LogicCombiner::visitBinOp(BinaryOperator *BO, unsigned Depth) {
     NewExpr = LHS->getExpr() | RHS->getExpr();
   else
     NewExpr = LHS->getExpr() ^ RHS->getExpr();
+  foldConstForExpr(NewExpr);
 
   uint64_t PoisonMaskSI = 0;
   uint64_t LPI = LHS->getExpr().getLeafMask() ^ LHS->getPoisonMaskSI();
@@ -187,6 +191,8 @@ LogicalOpNode *LogicCombiner::visitSelect(SelectInst *SI, unsigned Depth) {
 
   LogicalExpr NewExpr = (Cond->getExpr() & TrueVal->getExpr()) ^
                         ((~Cond->getExpr()) & FalseVal->getExpr());
+  foldConstForExpr(NewExpr);
+
   // TODO: We can reduce the weight if th node can be simplified even if
   // it is not the root node.
   unsigned Weight =
@@ -226,6 +232,64 @@ LogicalOpNode *LogicCombiner::getLogicalOpNode(Value *Val, unsigned Depth) {
     LLVM_DEBUG(dbgs() << *Node);
   }
   return LogicalOpNodes[Val];
+}
+
+void LogicCombiner::foldConstForExpr(LogicalExpr &Expr) {
+  uint64_t ConstLeafBits = Expr.getLeafMask() & ConstantLeafs;
+  if (popcount(ConstLeafBits) <= 1)
+    return;
+
+  bool Changed = false;
+  ExprAddChain NewAddChain;
+  Constant *ConstXor = nullptr;
+  for (auto BitSet : Expr) {
+    ConstLeafBits = BitSet & ConstantLeafs;
+    int ConstLeafCnt = popcount(ConstLeafBits);
+    if (ConstLeafCnt > 1) {
+      Constant *AndChain = ConstAllOne;
+      unsigned LeafIdx;
+      uint64_t LeafIterBits = ConstLeafBits;
+      for (int I = 0; I < ConstLeafCnt; I++) {
+        LeafIdx = countr_zero(LeafIterBits);
+        Value *LeafVal = LeafValues[LeafIdx];
+        if (auto *ConstVal = dyn_cast<Constant>(LeafVal))
+          AndChain = ConstantExpr::getAnd(ConstVal, AndChain);
+        LeafIterBits -= (1ULL << LeafIdx);
+      }
+
+      if (auto *NewConstNode = getLogicalOpNode(AndChain, 1)) {
+        Changed = true;
+        if (NewConstNode->getExpr().size() == 0) {
+          BitSet = 0;
+          continue;
+        } else {
+          BitSet ^= ConstLeafBits;
+          BitSet |= *NewConstNode->getExpr().begin();
+        }
+      }
+    }
+
+    ConstLeafBits = BitSet & ConstantLeafs;
+    if (ConstLeafBits == BitSet && popcount(BitSet) == 1) {
+      unsigned LeafIdx = countr_zero(BitSet);
+      Constant *ConstVal = cast<Constant>(LeafValues[LeafIdx]);
+      if (!ConstXor)
+        ConstXor = ConstVal;
+      else
+        ConstXor = ConstantExpr::getXor(ConstXor, ConstVal);
+    } else
+      NewAddChain.insert(BitSet);
+  }
+
+  if (ConstXor && !ConstXor->isNullValue()) {
+    if (auto *NewConstNode = getLogicalOpNode(ConstXor, 1)) {
+      Changed = true;
+      NewAddChain.insert(*NewConstNode->getExpr().begin());
+    }
+  }
+
+  if (Changed)
+    Expr = LogicalExpr(NewAddChain);
 }
 
 Value *LogicCombiner::logicalOpToValue(LogicalOpNode *Node) {
@@ -281,11 +345,11 @@ Value *LogicCombiner::logicalOpToValue(LogicalOpNode *Node) {
 Value *LogicCombiner::buildAndChain(IRBuilder<> &Builder, Type *Ty,
                                     uint64_t LeafBits) {
   if (LeafBits == 0)
-    return Constant::getNullValue(Ty);
+    return ConstZero;
 
   // ExprAllOne is not in the LeafValues
   if (LeafBits == LogicalExpr::ExprAllOne)
-    return Constant::getAllOnesValue(Ty);
+    return ConstAllOne;
 
   unsigned LeafCnt = popcount(LeafBits);
   if (LeafCnt == 1)
@@ -305,6 +369,10 @@ Value *LogicCombiner::buildAndChain(IRBuilder<> &Builder, Type *Ty,
 Value *LogicCombiner::simplify(Value *Root) {
   assert(MaxLogicOpLeafsToScan <= 63 &&
          "Logical leaf node can't be larger than 63.");
+
+  ConstAllOne = Constant::getAllOnesValue(Root->getType());
+  ConstZero = Constant::getNullValue(Root->getType());
+
   LogicalOpNode *RootNode = getLogicalOpNode(Root);
   if (RootNode == nullptr)
     return nullptr;

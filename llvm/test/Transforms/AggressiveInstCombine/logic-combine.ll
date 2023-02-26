@@ -43,6 +43,26 @@ define i8 @leaf1_or_not(i8 %a)  {
   ret i8 %or
 }
 
+define i8 @leaf1_and_const_fold(i8 %a)  {
+; CHECK-LABEL: @leaf1_and_const_fold(
+; CHECK-NEXT:    [[TMP1:%.*]] = and i8 [[A:%.*]], 15
+; CHECK-NEXT:    ret i8 [[TMP1]]
+;
+  %and1 = and i8 %a, 111
+  %and2 = and i8 %and1, 31
+  ret i8 %and2
+}
+
+define i8 @leaf1_xor_const_fold(i8 %a)  {
+; CHECK-LABEL: @leaf1_xor_const_fold(
+; CHECK-NEXT:    [[TMP1:%.*]] = xor i8 112, [[A:%.*]]
+; CHECK-NEXT:    ret i8 [[TMP1]]
+;
+  %xor1 = xor i8 %a, 111
+  %xor2 = xor i8 %xor1, 31
+  ret i8 %xor2
+}
+
 define i8 @leaf2_xor(i8 %a, i8 %b)  {
 ; CHECK-LABEL: @leaf2_xor(
 ; CHECK-NEXT:    ret i8 [[B:%.*]]
@@ -115,6 +135,21 @@ define i16 @leaf2_ret_xor(i16 %a, i16 %b)  {
   %and.ab = and i16 %a, %b
   %xor = xor i16 %or.ab, %and.ab
   ret i16 %xor
+}
+
+define i8 @leaf2_ret_const_fold(i8 %a, i8 %b)  {
+; CHECK-LABEL: @leaf2_ret_const_fold(
+; CHECK-NEXT:    [[TMP1:%.*]] = xor i8 [[B:%.*]], -1
+; CHECK-NEXT:    [[TMP2:%.*]] = and i8 [[A:%.*]], 18
+; CHECK-NEXT:    [[TMP3:%.*]] = and i8 [[TMP1]], [[TMP2]]
+; CHECK-NEXT:    ret i8 [[TMP3]]
+;
+  %and1 = and i8 %a, 122
+  %or = or i8 %and1, %b
+  %and2 = and i8 %or, 23
+  %and3 = and i8 %b, 23
+  %r = xor i8 %and2, %and3
+  ret i8 %r
 }
 
 define i8 @leaf3_complex_ret_const_false(i8 %a, i8 %b, i8 %c)  {

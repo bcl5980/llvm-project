@@ -49,7 +49,8 @@ public:
 
 class LogicCombiner {
 public:
-  LogicCombiner() : LogicalOpNodes(), LeafValues(), LeafsMayPoison() {}
+  LogicCombiner()
+      : LogicalOpNodes(), LeafValues(), LeafsMayPoison(), ConstantLeafs() {}
   ~LogicCombiner() { clear(); }
 
   Value *simplify(Value *Root);
@@ -61,6 +62,9 @@ private:
   SmallDenseMap<Value *, LogicalOpNode *, 16> LogicalOpNodes;
   SmallSetVector<Value *, 8> LeafValues;
   uint64_t LeafsMayPoison;
+  uint64_t ConstantLeafs;
+  Constant *ConstAllOne;
+  Constant *ConstZero;
 
   void clear();
 
@@ -68,6 +72,8 @@ private:
   LogicalOpNode *visitBinOp(BinaryOperator *BO, unsigned Depth);
   LogicalOpNode *visitSelect(SelectInst *SI, unsigned Depth);
   LogicalOpNode *getLogicalOpNode(Value *Val, unsigned Depth = 0);
+  void foldConstForExpr(LogicalExpr &Expr);
+
   Value *logicalOpToValue(LogicalOpNode *Node);
   Value *buildAndChain(IRBuilder<> &Builder, Type *Ty, uint64_t LeafBits);
 };
