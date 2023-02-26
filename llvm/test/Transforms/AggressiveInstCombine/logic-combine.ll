@@ -161,6 +161,59 @@ define i32 @leaf3_ret_and_chain_extra_use(i32 %a, i32 %b, i32 %c)  {
   ret i32 %abbc
 }
 
+define i1 @leaf3_select_ret_and(i1 %a, i1 %b, i1 noundef %c) {
+; CHECK-LABEL: @leaf3_select_ret_and(
+; CHECK-NEXT:    [[TMP1:%.*]] = and i1 [[A:%.*]], [[C:%.*]]
+; CHECK-NEXT:    ret i1 [[TMP1]]
+;
+  %ab = and i1 %a, %b
+  %si = select i1 %a, i1 %c, i1 %b
+  %xor2 = xor i1 %si, %b
+  %cond = xor i1 %xor2, %ab
+  ret i1 %cond
+}
+
+define i1 @leaf3_select_ret_and2(i1 %a, i1 %b, i1 %c) {
+; CHECK-LABEL: @leaf3_select_ret_and2(
+; CHECK-NEXT:    [[TMP1:%.*]] = and i1 [[A:%.*]], [[B:%.*]]
+; CHECK-NEXT:    ret i1 [[TMP1]]
+;
+  %ac = and i1 %a, %c
+  %si = select i1 %a, i1 %c, i1 %b
+  %xor2 = xor i1 %si, %b
+  %cond = xor i1 %xor2, %ac
+  ret i1 %cond
+}
+
+define i1 @leaf3_select_ret_leaf(i1 %a, i1 %b, i1 %c) {
+; CHECK-LABEL: @leaf3_select_ret_leaf(
+; CHECK-NEXT:    ret i1 [[B:%.*]]
+;
+  %ab = and i1 %a, %b
+  %ac = and i1 %a, %c
+  %si = select i1 %a, i1 %c, i1 %b
+  %xor2 = xor i1 %si, %ab
+  %cond = xor i1 %xor2, %ac
+  ret i1 %cond
+}
+
+; negative test, may have poison
+
+define i1 @leaf3_select_undef_ret_and(i1 %a, i1 %b, i1 %c) {
+; CHECK-LABEL: @leaf3_select_undef_ret_and(
+; CHECK-NEXT:    [[AB:%.*]] = and i1 [[A:%.*]], [[B:%.*]]
+; CHECK-NEXT:    [[SI:%.*]] = select i1 [[A]], i1 [[C:%.*]], i1 [[B]]
+; CHECK-NEXT:    [[XOR2:%.*]] = xor i1 [[SI]], [[B]]
+; CHECK-NEXT:    [[COND:%.*]] = xor i1 [[XOR2]], [[AB]]
+; CHECK-NEXT:    ret i1 [[COND]]
+;
+  %ab = and i1 %a, %b
+  %si = select i1 %a, i1 %c, i1 %b
+  %xor2 = xor i1 %si, %b
+  %cond = xor i1 %xor2, %ab
+  ret i1 %cond
+}
+
 define i8 @leaf4_ret_const_true(i8 %a, i8 %b, i8 %c, i8 %d)  {
 ; CHECK-LABEL: @leaf4_ret_const_true(
 ; CHECK-NEXT:    ret i8 -1
@@ -327,6 +380,68 @@ define i32 @leaf4_complex_ret_and_chain_extra_use(i32 %a, i32 %b, i32 %c, i32 %d
   %and2 = and i32 %and, %d
   call void @use32(i32 %or2)
   ret i32 %and2
+}
+
+define i1 @leaf4_select_noundef_complex_ret_leaf(i1 noundef %a, i1 %b, i1 %c, i1 %d)  {
+; CHECK-LABEL: @leaf4_select_noundef_complex_ret_leaf(
+; CHECK-NEXT:    ret i1 [[A:%.*]]
+;
+  %bd = select i1 %d, i1 %b, i1 false
+  %xor = xor i1 %bd, %c
+  %not.bd = xor i1 %xor, true
+  %xor.ab = xor i1 %a, %b
+  %or1 = or i1 %xor.ab, %c
+  %or2 = or i1 %or1, %not.bd
+  %or3 = or i1 %or2, %a
+  %and = and i1 %or3, %a
+  ret i1 %and
+}
+
+define i1 @leaf4_select_noundef_complex_ret_and(i1 %a, i1 %b, i1 %c, i1 noundef %d) {
+; CHECK-LABEL: @leaf4_select_noundef_complex_ret_and(
+; CHECK-NEXT:    [[TMP1:%.*]] = and i1 [[B:%.*]], [[D:%.*]]
+; CHECK-NEXT:    ret i1 [[TMP1]]
+;
+  %ab = and i1 %a, %b
+  %bc = and i1 %b, %c
+  %xor.ac = xor i1 %a, %c
+  %or = or i1 %ab, %xor.ac
+  %not.bc = xor i1 %bc, true
+  %and = and i1 %not.bc, %a
+  %xor = xor i1 %and, %or
+  %si = select i1 %b, i1 %d, i1 %xor
+  %xor2 = xor i1 %si, %c
+  %cond = xor i1 %xor2, %bc
+  ret i1 %cond
+}
+
+define i1 @leaf4_select_poison_masked_complex_ret_leaf(i1 %a, i1 %b, i1 %c, i1 %d)  {
+; CHECK-LABEL: @leaf4_select_poison_masked_complex_ret_leaf(
+; CHECK-NEXT:    ret i1 [[A:%.*]]
+;
+  %bd = select i1 %d, i1 %b, i1 false
+  %xor = xor i1 %bd, %c
+  %not.bd = xor i1 %xor, true
+  %xor.ab = xor i1 %a, %b
+  %or1 = or i1 %xor.ab, %c
+  %or2 = or i1 %or1, %not.bd
+  %or3 = or i1 %or2, %a
+  %and = and i1 %or3, %a
+  ret i1 %and
+}
+
+define i1 @leaf4_select_poison_masked_complex_ret_leaf2(i1 %a, i1 %b, i1 %c)  {
+; CHECK-LABEL: @leaf4_select_poison_masked_complex_ret_leaf2(
+; CHECK-NEXT:    ret i1 [[A:%.*]]
+;
+  %not.a = xor i1 %a, true
+  %or1 = or i1 %not.a, %b
+  %or2 = or i1 %or1, %c
+  %xor = xor i1 %or2, %a
+  %or3 = or i1 %not.a, %c
+  %or4 = select i1 %or3, i1 true, i1 %b
+  %cond = xor i1 %xor, %or4
+  ret i1 %cond
 }
 
 declare void @use8(i8)

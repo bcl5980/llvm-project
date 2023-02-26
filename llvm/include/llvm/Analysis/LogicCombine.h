@@ -24,20 +24,22 @@ private:
   LogicalExpr Expr;
   unsigned Weight;
   unsigned OneUseWeight;
+  uint64_t PoisonMaskSI; // Record Poison from Select Inst True/False Value
 
   void printAndChain(raw_ostream &OS, uint64_t LeafBits) const;
 
 public:
   LogicalOpNode(LogicCombiner *Helper, Value *Val, const LogicalExpr &SrcExpr,
-                unsigned Weight, unsigned OneUseWeight)
+                unsigned Weight, unsigned OneUseWeight, uint64_t PoisonMaskSI)
       : Helper(Helper), Val(Val), Expr(SrcExpr), Weight(Weight),
-        OneUseWeight(OneUseWeight) {}
+        OneUseWeight(OneUseWeight), PoisonMaskSI(PoisonMaskSI) {}
   ~LogicalOpNode() {}
 
   Value *getValue() const { return Val; }
   const LogicalExpr &getExpr() const { return Expr; }
   unsigned getWeight() const { return Weight; }
   unsigned getOneUseWeight() const { return OneUseWeight; }
+  uint64_t getPoisonMaskSI() const { return PoisonMaskSI; }
 
   bool worthToCombine(unsigned InstCnt) const {
     return (OneUseWeight + InstCnt) < Weight;
@@ -47,7 +49,7 @@ public:
 
 class LogicCombiner {
 public:
-  LogicCombiner() {}
+  LogicCombiner() : LogicalOpNodes(), LeafValues(), LeafsMayPoison() {}
   ~LogicCombiner() { clear(); }
 
   Value *simplify(Value *Root);
@@ -58,11 +60,13 @@ private:
   SpecificBumpPtrAllocator<LogicalOpNode> Alloc;
   SmallDenseMap<Value *, LogicalOpNode *, 16> LogicalOpNodes;
   SmallSetVector<Value *, 8> LeafValues;
+  uint64_t LeafsMayPoison;
 
   void clear();
 
   LogicalOpNode *visitLeafNode(Value *Val, unsigned Depth);
   LogicalOpNode *visitBinOp(BinaryOperator *BO, unsigned Depth);
+  LogicalOpNode *visitSelect(SelectInst *SI, unsigned Depth);
   LogicalOpNode *getLogicalOpNode(Value *Val, unsigned Depth = 0);
   Value *logicalOpToValue(LogicalOpNode *Node);
   Value *buildAndChain(IRBuilder<> &Builder, Type *Ty, uint64_t LeafBits);

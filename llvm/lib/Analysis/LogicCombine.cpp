@@ -32,6 +32,8 @@
 #include "llvm/Analysis/LogicCombine.h"
 #include "llvm/ADT/Statistic.h"
 #include "llvm/ADT/StringExtras.h"
+#include "llvm/ADT/Twine.h"
+#include "llvm/Analysis/ValueTracking.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
@@ -89,10 +91,14 @@ void LogicalOpNode::print(raw_ostream &OS) const {
     printAndChain(OS, *I);
   }
 
-  OS << "\nWeight: " << Weight << "; OneUseWeight: " << OneUseWeight << ";\n\n";
+  OS << "\nWeight: " << Weight << "; OneUseWeight: " << OneUseWeight << ";\n";
+  OS << "PoisonSrc: 0x"
+     << Twine::utohexstr(Expr.getLeafMask() & Helper->LeafsMayPoison)
+     << "; PoisonMaskSI: 0x" << Twine::utohexstr(PoisonMaskSI) << ";\n\n";
 }
 
 void LogicCombiner::clear() {
+  LeafsMayPoison = 0;
   LogicalOpNodes.clear();
   LeafValues.clear();
 }
@@ -112,10 +118,13 @@ LogicalOpNode *LogicCombiner::visitLeafNode(Value *Val, unsigned Depth) {
     else if (ConstVal->isAllOnesValue())
       ExprVal = LogicalExpr::ExprAllOne;
   }
-  if (ExprVal != LogicalExpr::ExprAllOne && ExprVal != 0)
+  if (ExprVal != LogicalExpr::ExprAllOne && ExprVal != 0) {
+    if (!isGuaranteedNotToBeUndefOrPoison(Val))
+      LeafsMayPoison |= ExprVal;
     LeafValues.insert(Val);
+  }
   LogicalOpNode *Node = new (Alloc.Allocate())
-      LogicalOpNode(this, Val, LogicalExpr(ExprVal), 0, 0);
+      LogicalOpNode(this, Val, LogicalExpr(ExprVal), 0, 0, 0);
   LogicalOpNodes[Val] = Node;
   return Node;
 }
@@ -146,9 +155,54 @@ LogicalOpNode *LogicCombiner::visitBinOp(BinaryOperator *BO, unsigned Depth) {
     NewExpr = LHS->getExpr() | RHS->getExpr();
   else
     NewExpr = LHS->getExpr() ^ RHS->getExpr();
+
+  uint64_t PoisonMaskSI = 0;
+  uint64_t LPI = LHS->getExpr().getLeafMask() ^ LHS->getPoisonMaskSI();
+  uint64_t RPI = RHS->getExpr().getLeafMask() ^ RHS->getPoisonMaskSI();
+  PoisonMaskSI =
+      ((~LPI) & RHS->getPoisonMaskSI()) | ((~RPI) & LHS->getPoisonMaskSI());
+  PoisonMaskSI &= NewExpr.getLeafMask() & LeafsMayPoison;
+
   LogicalOpNode *Node = new (Alloc.Allocate())
-      LogicalOpNode(this, BO, NewExpr, Weight, OneUseWeight);
+      LogicalOpNode(this, BO, NewExpr, Weight, OneUseWeight, PoisonMaskSI);
   LogicalOpNodes[BO] = Node;
+  return Node;
+}
+
+LogicalOpNode *LogicCombiner::visitSelect(SelectInst *SI, unsigned Depth) {
+  if (!SI->getType()->isIntOrIntVectorTy(1))
+    return nullptr;
+
+  LogicalOpNode *Cond = getLogicalOpNode(SI->getCondition(), Depth + 1);
+  if (Cond == nullptr)
+    return nullptr;
+
+  LogicalOpNode *TrueVal = getLogicalOpNode(SI->getTrueValue(), Depth + 1);
+  if (TrueVal == nullptr)
+    return nullptr;
+
+  LogicalOpNode *FalseVal = getLogicalOpNode(SI->getFalseValue(), Depth + 1);
+  if (FalseVal == nullptr)
+    return nullptr;
+
+  LogicalExpr NewExpr = (Cond->getExpr() & TrueVal->getExpr()) ^
+                        ((~Cond->getExpr()) & FalseVal->getExpr());
+  // TODO: We can reduce the weight if th node can be simplified even if
+  // it is not the root node.
+  unsigned Weight =
+      Cond->getWeight() + TrueVal->getWeight() + FalseVal->getWeight() + 1;
+  unsigned OneUseWeight = Weight;
+  if (SI->hasOneUse())
+    OneUseWeight = Cond->getOneUseWeight() + TrueVal->getOneUseWeight() +
+                   FalseVal->getOneUseWeight();
+
+  uint64_t PoisonMaskSI = NewExpr.getLeafMask() & LeafsMayPoison;
+  PoisonMaskSI &=
+      TrueVal->getExpr().getLeafMask() | FalseVal->getExpr().getLeafMask();
+
+  LogicalOpNode *Node = new (Alloc.Allocate())
+      LogicalOpNode(this, SI, NewExpr, Weight, OneUseWeight, PoisonMaskSI);
+  LogicalOpNodes[SI] = Node;
   return Node;
 }
 
@@ -162,6 +216,8 @@ LogicalOpNode *LogicCombiner::getLogicalOpNode(Value *Val, unsigned Depth) {
     // TODO: add select instruction support
     if (auto *BO = dyn_cast<BinaryOperator>(Val))
       Node = visitBinOp(BO, Depth);
+    else if (auto *SI = dyn_cast<SelectInst>(Val))
+      Node = visitSelect(SI, Depth);
     else
       Node = visitLeafNode(Val, Depth);
 
@@ -177,6 +233,9 @@ Value *LogicCombiner::logicalOpToValue(LogicalOpNode *Node) {
   // Empty when all leaf bits are erased from the set because a ^ a = 0.
   if (Expr.size() == 0)
     return Constant::getNullValue(Node->getValue()->getType());
+
+  if (Node->getPoisonMaskSI() != 0)
+    return nullptr;
 
   Instruction *I = cast<Instruction>(Node->getValue());
   Type *Ty = I->getType();

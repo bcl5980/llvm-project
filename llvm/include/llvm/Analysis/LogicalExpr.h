@@ -75,6 +75,8 @@ public:
   }
 
   unsigned size() const { return AddChain.size(); }
+  uint64_t getLeafMask() const { return LeafMask; }
+
   ExprAddChain::iterator begin() { return AddChain.begin(); }
   ExprAddChain::iterator end() { return AddChain.end(); }
   ExprAddChain::const_iterator begin() const { return AddChain.begin(); }
