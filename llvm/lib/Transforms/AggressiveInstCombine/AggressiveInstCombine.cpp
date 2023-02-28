@@ -841,7 +841,7 @@ static bool foldBitwiseLogic(Function &F, DominatorTree &DT) {
     for (Instruction &I : BB) {
       if (I.isBitwiseLogicOp()) {
         LogicCombiner LC;
-        Value *NewV = LC.simplify(&I);
+        Value *NewV = LC.simplify(&I, false);
         if (NewV) {
           MadeChange = true;
           I.replaceAllUsesWith(NewV);

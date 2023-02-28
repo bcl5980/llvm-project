@@ -4,11 +4,7 @@
 define i32 @test(i32 %p_16, i1 %c) {
 ; CHECK-LABEL: @test(
 ; CHECK-NEXT:  entry:
-; CHECK-NEXT:    [[XOR:%.*]] = xor i32 [[P_16:%.*]], 6
-; CHECK-NEXT:    [[OR_1:%.*]] = or i32 [[XOR]], [[P_16]]
-; CHECK-NEXT:    [[XOR_1:%.*]] = xor i32 [[OR_1]], 6
-; CHECK-NEXT:    [[OR_2:%.*]] = or i32 [[XOR_1]], [[P_16]]
-; CHECK-NEXT:    [[XOR_2:%.*]] = xor i32 [[OR_2]], 6
+; CHECK-NEXT:    [[XOR_2:%.*]] = xor i32 [[P_16:%.*]], 6
 ; CHECK-NEXT:    br label [[OUTER_HEADER:%.*]]
 ; CHECK:       outer.header:
 ; CHECK-NEXT:    br label [[INNER_HEADER:%.*]]

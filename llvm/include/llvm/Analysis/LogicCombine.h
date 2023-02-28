@@ -53,7 +53,9 @@ public:
       : LogicalOpNodes(), LeafValues(), LeafsMayPoison(), ConstantLeafs() {}
   ~LogicCombiner() { clear(); }
 
-  Value *simplify(Value *Root);
+  Value *simplify(Value *Root, bool simplifyOnly = true);
+  Value *simplify(unsigned Opcode, Value *LHS, Value *RHS,
+                  bool simplifyOnly = true);
 
 private:
   friend class LogicalOpNode;
@@ -74,8 +76,8 @@ private:
   LogicalOpNode *getLogicalOpNode(Value *Val, unsigned Depth = 0);
   void foldConstForExpr(LogicalExpr &Expr);
 
-  Value *logicalOpToValue(LogicalOpNode *Node);
-  Value *buildAndChain(IRBuilder<> &Builder, Type *Ty, uint64_t LeafBits);
+  Value *logicalOpToValue(LogicalOpNode *Node, bool simplifyOnly);
+  Value *buildAndChain(Instruction *I, uint64_t LeafBits, bool simplifyOnly);
 };
 
 inline raw_ostream &operator<<(raw_ostream &OS, const LogicalOpNode &I) {

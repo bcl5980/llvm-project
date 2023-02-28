@@ -292,28 +292,27 @@ void LogicCombiner::foldConstForExpr(LogicalExpr &Expr) {
     Expr = LogicalExpr(NewAddChain);
 }
 
-Value *LogicCombiner::logicalOpToValue(LogicalOpNode *Node) {
+Value *LogicCombiner::logicalOpToValue(LogicalOpNode *Node, bool simplifyOnly) {
   const LogicalExpr &Expr = Node->getExpr();
   // Empty when all leaf bits are erased from the set because a ^ a = 0.
   if (Expr.size() == 0)
-    return Constant::getNullValue(Node->getValue()->getType());
+    return ConstZero;
 
   if (Node->getPoisonMaskSI() != 0)
     return nullptr;
 
-  Instruction *I = cast<Instruction>(Node->getValue());
-  Type *Ty = I->getType();
-  IRBuilder<> Builder(I);
+  Instruction *I = dyn_cast_or_null<Instruction>(Node->getValue());
   if (Expr.size() == 1) {
     uint64_t LeafBits = *Expr.begin();
     unsigned InstCnt = popcount(LeafBits) - 1;
     // TODO: For now we assume we can't reuse any node from old instruction.
     // Later we can search if we can reuse the node is not one use.
     if (Node->worthToCombine(InstCnt))
-      return buildAndChain(Builder, Ty, LeafBits);
+      return buildAndChain(I, LeafBits, simplifyOnly);
   }
 
-  if (Expr.size() == 2) {
+  if (Expr.size() == 2 && !simplifyOnly) {
+    IRBuilder<> Builder(I);
     uint64_t LHS = *Expr.begin();
     uint64_t RHS = *(++Expr.begin());
     uint64_t CommonAnd = LHS & RHS;
@@ -327,23 +326,28 @@ Value *LogicCombiner::logicalOpToValue(LogicalOpNode *Node) {
     }
     unsigned InstCnt = popcount(CommonAnd) + popcount(LHS) + popcount(RHS) - 1;
     if (Node->worthToCombine(InstCnt)) {
-      Value *LHSV = buildAndChain(Builder, Ty, LHS);
-      Value *RHSV = buildAndChain(Builder, Ty, RHS);
+      Value *LHSV = buildAndChain(I, LHS, false);
+      Value *RHSV = buildAndChain(I, RHS, false);
       Value *Ret = Builder.CreateXor(LHSV, RHSV);
       if (CommonAnd)
-        Ret = Builder.CreateAnd(Ret, buildAndChain(Builder, Ty, CommonAnd));
+        Ret = Builder.CreateAnd(Ret, buildAndChain(I, CommonAnd, false));
       return Ret;
     }
   }
 
+  for (auto CachedNode : LogicalOpNodes) {
+    if (CachedNode.second->getExpr() == Expr &&
+        CachedNode.first != Node->getValue())
+      return CachedNode.first;
+  }
   // TODO: find the simplest form from logical expression when it has more than
   // 2 and chains.
 
   return nullptr;
 }
 
-Value *LogicCombiner::buildAndChain(IRBuilder<> &Builder, Type *Ty,
-                                    uint64_t LeafBits) {
+Value *LogicCombiner::buildAndChain(Instruction *I, uint64_t LeafBits,
+                                    bool simplifyOnly) {
   if (LeafBits == 0)
     return ConstZero;
 
@@ -355,6 +359,10 @@ Value *LogicCombiner::buildAndChain(IRBuilder<> &Builder, Type *Ty,
   if (LeafCnt == 1)
     return LeafValues[Log2_64(LeafBits)];
 
+  if (simplifyOnly)
+    return nullptr;
+
+  IRBuilder<> Builder(I);
   unsigned LeafIdx = countr_zero(LeafBits);
   Value *AndChain = LeafValues[LeafIdx];
   LeafBits -= (1ULL << LeafIdx);
@@ -366,7 +374,7 @@ Value *LogicCombiner::buildAndChain(IRBuilder<> &Builder, Type *Ty,
   return AndChain;
 }
 
-Value *LogicCombiner::simplify(Value *Root) {
+Value *LogicCombiner::simplify(Value *Root, bool simplifyOnly) {
   assert(MaxLogicOpLeafsToScan <= 63 &&
          "Logical leaf node can't be larger than 63.");
 
@@ -377,11 +385,61 @@ Value *LogicCombiner::simplify(Value *Root) {
   if (RootNode == nullptr)
     return nullptr;
 
-  Value *NewRoot = logicalOpToValue(RootNode);
+  Value *NewRoot = logicalOpToValue(RootNode, simplifyOnly);
   if (NewRoot == nullptr || NewRoot == Root)
     return nullptr;
 
   LogicalOpNodes.erase(Root);
+  NumLogicalOpsSimplified++;
+  return NewRoot;
+}
+
+Value *LogicCombiner::simplify(unsigned Opcode, Value *LHS, Value *RHS,
+                               bool simplifyOnly) {
+  assert(MaxLogicOpLeafsToScan <= 63 &&
+         "Logical leaf node can't be larger than 63.");
+  assert(Instruction::isBitwiseLogicOp(Opcode) && "Only support bitwise op");
+
+  ConstZero = Constant::getNullValue(LHS->getType());
+  ConstAllOne = Constant::getAllOnesValue(LHS->getType());
+
+  LogicalOpNode *LHSNode = getLogicalOpNode(LHS, 1);
+  if (LHSNode == nullptr)
+    return nullptr;
+
+  LogicalOpNode *RHSNode = getLogicalOpNode(RHS, 1);
+  if (RHSNode == nullptr)
+    return nullptr;
+
+  // TODO: We can reduce the weight if the node can be simplified even if
+  // it is not the root node.
+  unsigned Weight = LHSNode->getWeight() + RHSNode->getWeight() + 1;
+  unsigned OneUseWeight =
+      LHSNode->getOneUseWeight() + RHSNode->getOneUseWeight();
+
+  LogicalExpr NewExpr;
+  if (Opcode == Instruction::And)
+    NewExpr = LHSNode->getExpr() & RHSNode->getExpr();
+  else if (Opcode == Instruction::Or)
+    NewExpr = LHSNode->getExpr() | RHSNode->getExpr();
+  else
+    NewExpr = LHSNode->getExpr() ^ RHSNode->getExpr();
+  foldConstForExpr(NewExpr);
+
+  uint64_t PoisonMaskSI = 0;
+  uint64_t LPI = LHSNode->getExpr().getLeafMask() ^ LHSNode->getPoisonMaskSI();
+  uint64_t RPI = RHSNode->getExpr().getLeafMask() ^ RHSNode->getPoisonMaskSI();
+  PoisonMaskSI = ((~LPI) & RHSNode->getPoisonMaskSI()) |
+                 ((~RPI) & LHSNode->getPoisonMaskSI());
+  PoisonMaskSI &= NewExpr.getLeafMask() & LeafsMayPoison;
+
+  LogicalOpNode *RootNode = new (Alloc.Allocate())
+      LogicalOpNode(this, nullptr, NewExpr, Weight, OneUseWeight, PoisonMaskSI);
+
+  Value *NewRoot = logicalOpToValue(RootNode, simplifyOnly);
+  if (NewRoot == nullptr)
+    return nullptr;
+
   NumLogicalOpsSimplified++;
   return NewRoot;
 }
