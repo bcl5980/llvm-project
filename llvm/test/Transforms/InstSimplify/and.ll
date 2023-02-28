@@ -252,12 +252,7 @@ define i32 @or_xor_complex_op(i32 %x, i32 %in) {
 
 define i32 @or_xor_limitation(i32 %x, i32 %y) {
 ; CHECK-LABEL: @or_xor_limitation(
-; CHECK-NEXT:    [[OR1:%.*]] = or i32 [[Y:%.*]], [[X:%.*]]
-; CHECK-NEXT:    [[OR2:%.*]] = or i32 [[X]], [[Y]]
-; CHECK-NEXT:    [[XOR1:%.*]] = xor i32 [[Y]], [[OR1]]
-; CHECK-NEXT:    [[XOR2:%.*]] = xor i32 [[OR2]], [[X]]
-; CHECK-NEXT:    [[AND:%.*]] = and i32 [[XOR1]], [[XOR2]]
-; CHECK-NEXT:    ret i32 [[AND]]
+; CHECK-NEXT:    ret i32 0
 ;
   %or1 = or i32 %y, %x
   %or2 = or i32 %x, %y

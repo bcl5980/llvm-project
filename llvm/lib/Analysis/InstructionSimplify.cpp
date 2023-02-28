@@ -27,6 +27,7 @@
 #include "llvm/Analysis/CmpInstAnalysis.h"
 #include "llvm/Analysis/ConstantFolding.h"
 #include "llvm/Analysis/InstSimplifyFolder.h"
+#include "llvm/Analysis/LogicCombine.h"
 #include "llvm/Analysis/LoopAnalysisManager.h"
 #include "llvm/Analysis/MemoryBuiltins.h"
 #include "llvm/Analysis/OverflowInstAnalysis.h"
@@ -2260,6 +2261,12 @@ static Value *simplifyAndInst(Value *Op0, Value *Op1, const SimplifyQuery &Q,
   if (Value *V = simplifyByDomEq(Instruction::And, Op0, Op1, Q, MaxRecurse))
     return V;
 
+  if (MaxRecurse == RecursionLimit) {
+    LogicCombiner LC;
+    if (Value *V = LC.simplify(Instruction::And, Op0, Op1))
+      return V;
+  }
+
   return nullptr;
 }
 
@@ -2524,6 +2531,12 @@ static Value *simplifyOrInst(Value *Op0, Value *Op1, const SimplifyQuery &Q,
   if (Value *V = simplifyByDomEq(Instruction::Or, Op0, Op1, Q, MaxRecurse))
     return V;
 
+  if (MaxRecurse == RecursionLimit) {
+    LogicCombiner LC;
+    if (Value *V = LC.simplify(Instruction::Or, Op0, Op1))
+      return V;
+  }
+
   return nullptr;
 }
 
@@ -2601,6 +2614,12 @@ static Value *simplifyXorInst(Value *Op0, Value *Op1, const SimplifyQuery &Q,
 
   if (Value *V = simplifyByDomEq(Instruction::Xor, Op0, Op1, Q, MaxRecurse))
     return V;
+
+  if (MaxRecurse == RecursionLimit) {
+    LogicCombiner LC;
+    if (Value *V = LC.simplify(Instruction::Xor, Op0, Op1))
+      return V;
+  }
 
   return nullptr;
 }

@@ -39,8 +39,9 @@ define <vscale x 2 x i32> @masked_gather_and_zero_inactive_3(<vscale x 2 x ptr> 
 define <vscale x 2 x i32> @masked_gather_and_zero_inactive_4(<vscale x 2 x ptr> %ptr, <vscale x 2 x i1> %inv_mask) {
 ; CHECK-LABEL: @masked_gather_and_zero_inactive_4(
 ; CHECK-NEXT:    [[MASK:%.*]] = xor <vscale x 2 x i1> [[INV_MASK:%.*]], shufflevector (<vscale x 2 x i1> insertelement (<vscale x 2 x i1> undef, i1 true, i32 0), <vscale x 2 x i1> undef, <vscale x 2 x i32> zeroinitializer)
-; CHECK-NEXT:    [[GATHER:%.*]] = call <vscale x 2 x i32> @llvm.masked.gather.nxv2i32.nxv2p0(<vscale x 2 x ptr> [[PTR:%.*]], i32 4, <vscale x 2 x i1> [[MASK]], <vscale x 2 x i32> zeroinitializer)
-; CHECK-NEXT:    ret <vscale x 2 x i32> [[GATHER]]
+; CHECK-NEXT:    [[GATHER:%.*]] = call <vscale x 2 x i32> @llvm.masked.gather.nxv2i32.nxv2p0(<vscale x 2 x ptr> [[PTR:%.*]], i32 4, <vscale x 2 x i1> [[MASK]], <vscale x 2 x i32> undef)
+; CHECK-NEXT:    [[MASKED:%.*]] = select <vscale x 2 x i1> [[INV_MASK]], <vscale x 2 x i32> zeroinitializer, <vscale x 2 x i32> [[GATHER]]
+; CHECK-NEXT:    ret <vscale x 2 x i32> [[MASKED]]
 ;
   %splat  = shufflevector <vscale x 2 x i1> insertelement (<vscale x 2 x i1> undef, i1 true, i32 0), <vscale x 2 x i1> undef, <vscale x 2 x i32> zeroinitializer
   %mask = xor <vscale x 2 x i1> %inv_mask, %splat
@@ -54,7 +55,8 @@ define <vscale x 2 x i32> @masked_gather_and_zero_inactive_5(<vscale x 2 x ptr> 
 ; CHECK-LABEL: @masked_gather_and_zero_inactive_5(
 ; CHECK-NEXT:    [[MASK:%.*]] = xor <vscale x 2 x i1> [[INV_MASK:%.*]], shufflevector (<vscale x 2 x i1> insertelement (<vscale x 2 x i1> undef, i1 true, i32 0), <vscale x 2 x i1> undef, <vscale x 2 x i32> zeroinitializer)
 ; CHECK-NEXT:    [[GATHER:%.*]] = call <vscale x 2 x i32> @llvm.masked.gather.nxv2i32.nxv2p0(<vscale x 2 x ptr> [[PTR:%.*]], i32 4, <vscale x 2 x i1> [[MASK]], <vscale x 2 x i32> zeroinitializer)
-; CHECK-NEXT:    ret <vscale x 2 x i32> [[GATHER]]
+; CHECK-NEXT:    [[MASKED:%.*]] = select <vscale x 2 x i1> [[INV_MASK]], <vscale x 2 x i32> zeroinitializer, <vscale x 2 x i32> [[GATHER]]
+; CHECK-NEXT:    ret <vscale x 2 x i32> [[MASKED]]
 ;
   %splat  = shufflevector <vscale x 2 x i1> insertelement (<vscale x 2 x i1> undef, i1 true, i32 0), <vscale x 2 x i1> undef, <vscale x 2 x i32> zeroinitializer
   %mask = xor <vscale x 2 x i1> %inv_mask, %splat
@@ -96,8 +98,9 @@ define <vscale x 2 x float> @masked_gather_and_zero_inactive_8(<vscale x 2 x ptr
 ; CHECK-LABEL: @masked_gather_and_zero_inactive_8(
 ; CHECK-NEXT:    [[MASK:%.*]] = xor <vscale x 2 x i1> [[INV_MASK:%.*]], shufflevector (<vscale x 2 x i1> insertelement (<vscale x 2 x i1> undef, i1 true, i32 0), <vscale x 2 x i1> undef, <vscale x 2 x i32> zeroinitializer)
 ; CHECK-NEXT:    [[PG:%.*]] = and <vscale x 2 x i1> [[MASK]], [[COND:%.*]]
-; CHECK-NEXT:    [[GATHER:%.*]] = call <vscale x 2 x float> @llvm.masked.gather.nxv2f32.nxv2p0(<vscale x 2 x ptr> [[PTR:%.*]], i32 4, <vscale x 2 x i1> [[PG]], <vscale x 2 x float> zeroinitializer)
-; CHECK-NEXT:    ret <vscale x 2 x float> [[GATHER]]
+; CHECK-NEXT:    [[GATHER:%.*]] = call <vscale x 2 x float> @llvm.masked.gather.nxv2f32.nxv2p0(<vscale x 2 x ptr> [[PTR:%.*]], i32 4, <vscale x 2 x i1> [[PG]], <vscale x 2 x float> undef)
+; CHECK-NEXT:    [[MASKED:%.*]] = select <vscale x 2 x i1> [[INV_MASK]], <vscale x 2 x float> zeroinitializer, <vscale x 2 x float> [[GATHER]]
+; CHECK-NEXT:    ret <vscale x 2 x float> [[MASKED]]
 ;
   %splat  = shufflevector <vscale x 2 x i1> insertelement (<vscale x 2 x i1> undef, i1 true, i32 0), <vscale x 2 x i1> undef, <vscale x 2 x i32> zeroinitializer
   %mask = xor <vscale x 2 x i1> %inv_mask, %splat

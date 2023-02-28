@@ -1060,7 +1060,9 @@ entry:
 define <4 x i16> @and_constant_mask_undef_3(<4 x i16> %add) {
 ; CHECK-LABEL: @and_constant_mask_undef_3(
 ; CHECK-NEXT:  entry:
-; CHECK-NEXT:    ret <4 x i16> <i16 0, i16 0, i16 0, i16 undef>
+; CHECK-NEXT:    [[TMP0:%.*]] = and <4 x i16> [[ADD:%.*]], <i16 0, i16 0, i16 poison, i16 poison>
+; CHECK-NEXT:    [[AND:%.*]] = shufflevector <4 x i16> [[TMP0]], <4 x i16> poison, <4 x i32> <i32 0, i32 1, i32 1, i32 undef>
+; CHECK-NEXT:    ret <4 x i16> [[AND]]
 ;
 entry:
   %shuffle = shufflevector <4 x i16> %add, <4 x i16> undef, <4 x i32> <i32 0, i32 1, i32 1, i32 undef>
