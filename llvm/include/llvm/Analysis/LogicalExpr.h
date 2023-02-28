@@ -121,6 +121,16 @@ public:
     updateLeafMask();
     return *this;
   }
+
+  bool operator==(const LogicalExpr &RHS) const {
+    if (AddChain.size() != RHS.AddChain.size())
+      return false;
+    for (auto BitSet : AddChain) {
+      if (RHS.AddChain.find(BitSet) == RHS.AddChain.end())
+        return false;
+    }
+    return true;
+  }
 };
 
 inline LogicalExpr operator*(LogicalExpr a, const LogicalExpr &b) {

@@ -13,6 +13,7 @@
 #include "InstCombineInternal.h"
 #include "llvm/Analysis/CmpInstAnalysis.h"
 #include "llvm/Analysis/InstructionSimplify.h"
+#include "llvm/Analysis/LogicCombine.h"
 #include "llvm/IR/ConstantRange.h"
 #include "llvm/IR/Intrinsics.h"
 #include "llvm/IR/PatternMatch.h"
@@ -2633,6 +2634,10 @@ Instruction *InstCombinerImpl::visitAnd(BinaryOperator &I) {
   if (Instruction *Folded = foldLogicOfIsFPClass(I, Op0, Op1))
     return Folded;
 
+  LogicCombiner LC;
+  if (Value *NewV = LC.simplify(&I))
+    return replaceInstUsesWith(I, NewV);
+
   return nullptr;
 }
 
@@ -3642,6 +3647,10 @@ Instruction *InstCombinerImpl::visitOr(BinaryOperator &I) {
   if (Instruction *Folded = foldLogicOfIsFPClass(I, Op0, Op1))
     return Folded;
 
+  LogicCombiner LC;
+  if (Value *NewV = LC.simplify(&I))
+    return replaceInstUsesWith(I, NewV);
+
   return nullptr;
 }
 
@@ -4555,6 +4564,10 @@ Instruction *InstCombinerImpl::visitXor(BinaryOperator &I) {
 
   if (Instruction *Folded = canonicalizeConditionalNegationViaMathToSelect(I))
     return Folded;
+
+  LogicCombiner LC;
+  if (Value *NewV = LC.simplify(&I))
+    return replaceInstUsesWith(I, NewV);
 
   return nullptr;
 }

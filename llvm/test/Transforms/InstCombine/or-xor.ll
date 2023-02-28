@@ -231,11 +231,7 @@ define i32 @test9(i32 %x, i32 %y) {
 
 define i32 @test10(i32 %A, i32 %B) {
 ; CHECK-LABEL: @test10(
-; CHECK-NEXT:    [[XOR1:%.*]] = xor i32 [[B:%.*]], [[A:%.*]]
-; CHECK-NEXT:    [[TMP1:%.*]] = xor i32 [[A]], [[B]]
-; CHECK-NEXT:    [[XOR2:%.*]] = xor i32 [[TMP1]], -1
-; CHECK-NEXT:    [[OR:%.*]] = or i32 [[XOR1]], [[XOR2]]
-; CHECK-NEXT:    ret i32 [[OR]]
+; CHECK-NEXT:    ret i32 -1
 ;
   %xor1 = xor i32 %B, %A
   %not = xor i32 %A, -1
@@ -246,11 +242,7 @@ define i32 @test10(i32 %A, i32 %B) {
 
 define i32 @test10_commuted(i32 %A, i32 %B) {
 ; CHECK-LABEL: @test10_commuted(
-; CHECK-NEXT:    [[XOR1:%.*]] = xor i32 [[B:%.*]], [[A:%.*]]
-; CHECK-NEXT:    [[TMP1:%.*]] = xor i32 [[A]], [[B]]
-; CHECK-NEXT:    [[XOR2:%.*]] = xor i32 [[TMP1]], -1
-; CHECK-NEXT:    [[OR:%.*]] = or i32 [[XOR1]], [[XOR2]]
-; CHECK-NEXT:    ret i32 [[OR]]
+; CHECK-NEXT:    ret i32 -1
 ;
   %xor1 = xor i32 %B, %A
   %not = xor i32 %A, -1
@@ -290,11 +282,7 @@ define i32 @test10_commuted_extrause(i32 %A, i32 %B, ptr %dst) {
 ; (A ^ B) | ~(A ^ B) --> -1
 define i32 @test10_canonical(i32 %A, i32 %B) {
 ; CHECK-LABEL: @test10_canonical(
-; CHECK-NEXT:    [[XOR1:%.*]] = xor i32 [[B:%.*]], [[A:%.*]]
-; CHECK-NEXT:    [[XOR2:%.*]] = xor i32 [[A]], [[B]]
-; CHECK-NEXT:    [[NOT:%.*]] = xor i32 [[XOR2]], -1
-; CHECK-NEXT:    [[OR:%.*]] = or i32 [[XOR1]], [[NOT]]
-; CHECK-NEXT:    ret i32 [[OR]]
+; CHECK-NEXT:    ret i32 -1
 ;
   %xor1 = xor i32 %B, %A
   %xor2 = xor i32 %A, %B
