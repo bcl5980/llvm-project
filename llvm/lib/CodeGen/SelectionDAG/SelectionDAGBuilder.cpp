@@ -6672,6 +6672,28 @@ void SelectionDAGBuilder::visitIntrinsicCall(const CallInst &I,
     setValue(&I, DAG.getNode(ISD::ABS, sdl, Op1.getValueType(), Op1));
     return;
   }
+  case Intrinsic::scompare:
+  case Intrinsic::ucompare: {
+    EVT VT = TLI.getValueType(DAG.getDataLayout(), I.getType());
+    SDValue Op1 = getValue(I.getArgOperand(0));
+    SDValue Op2 = getValue(I.getArgOperand(1));
+    if (I.getType()->isIntOrIntVectorTy(1)) {
+      setValue(&I, DAG.getSetCC(sdl, VT, Op1, Op2, ISD::CondCode::SETNE));
+      return;
+    }
+    bool Signed = Intrinsic == Intrinsic::scompare;
+    EVT CCVT = TLI.getSetCCResultType(DAG.getDataLayout(), *DAG.getContext(),
+                                      Op1.getValueType());
+    SDValue SGT =
+        DAG.getSetCC(sdl, CCVT, Op1, Op2,
+                     Signed ? ISD::CondCode::SETGT : ISD::CondCode::SETUGT);
+    SDValue SLT =
+        DAG.getSetCC(sdl, CCVT, Op1, Op2,
+                     Signed ? ISD::CondCode::SETLT : ISD::CondCode::SETULT);
+    SDValue SUB = DAG.getNode(ISD::SUB, sdl, CCVT, SGT, SLT);
+    setValue(&I, DAG.getSExtOrTrunc(SUB, sdl, VT));
+    return;
+  }
   case Intrinsic::stacksave: {
     SDValue Op = getRoot();
     EVT VT = TLI.getValueType(DAG.getDataLayout(), I.getType());

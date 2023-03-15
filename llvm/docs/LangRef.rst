@@ -14067,6 +14067,69 @@ integer element type. The argument types must match each other, and the return
 type must match the argument type.
 
 
+.. _int_scompare:
+
+'``llvm.scompare.*``' Intrinsic
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Syntax:
+"""""""
+
+This is an overloaded intrinsic. You can use ``@llvm.scompare`` on any
+integer bit width or any vector of integer elements.
+
+::
+
+      declare i8 @llvm.scompare.i8.i32(i32 %a, i32 %b)
+      declare <4 x i32> @llvm.scompare.v4i32.v4i16(<4 x i16> %a, <4 x i16> %b)
+
+Overview:
+"""""""""
+
+Signed version of three way comparison. If ``%a`` is larger than ``%b`` return
+1, if ``%a`` equal to ``%b`` return 0, if ``%a`` is less than ``%b`` return -1.
+Vector intrinsics operate on a per-element basis. The smaller element of ``%a``
+and ``%b`` at a given index is returned for that index.
+
+Arguments:
+""""""""""
+
+The arguments (``%a`` and ``%b``) may be of any integer type or a vector with
+integer element type. The argument types must match each other, and the return
+type must match the argument type.
+
+.. _int_ucompare:
+
+'``llvm.ucompare.*``' Intrinsic
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Syntax:
+"""""""
+
+This is an overloaded intrinsic. You can use ``@llvm.ucompare`` on any
+integer bit width or any vector of integer elements.
+
+::
+
+      declare i8 @llvm.ucompare.i8.i32(i32 %a, i32 %b)
+      declare <4 x i32> @llvm.ucompare.v4i32.v4i16(<4 x i16> %a, <4 x i16> %b)
+
+Overview:
+"""""""""
+
+Unsigned version of three way comparison. If ``%a`` is larger than ``%b``
+return 1, if ``%a`` equal to ``%b`` return 0, if ``%a`` is less than ``%b`` 
+return -1. Vector intrinsics operate on a per-element basis. The smaller 
+element of ``%a`` and ``%b`` at a given index is returned for that index.
+
+Arguments:
+""""""""""
+
+The arguments (``%a`` and ``%b``) may be of any integer type or a vector with
+integer element type. The argument types must match each other, and the return
+type must match the argument type.
+
+
 .. _int_memcpy:
 
 '``llvm.memcpy``' Intrinsic
