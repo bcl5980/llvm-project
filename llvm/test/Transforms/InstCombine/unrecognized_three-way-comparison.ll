@@ -8,10 +8,11 @@ declare void @foo(i32 %x)
 define i32 @compare_against_arbitrary_value(i32 %x, i32 %c) {
 ; CHECK-LABEL: @compare_against_arbitrary_value(
 ; CHECK-NEXT:  entry:
-; CHECK-NEXT:    [[TMP0:%.*]] = icmp sgt i32 [[X:%.*]], [[C:%.*]]
-; CHECK-NEXT:    br i1 [[TMP0]], label [[CALLFOO:%.*]], label [[EXIT:%.*]]
+; CHECK-NEXT:    [[SELECT2:%.*]] = call i32 @llvm.scompare.i32.i32(i32 [[X:%.*]], i32 [[C:%.*]])
+; CHECK-NEXT:    [[COND:%.*]] = icmp sgt i32 [[SELECT2]], 0
+; CHECK-NEXT:    br i1 [[COND]], label [[CALLFOO:%.*]], label [[EXIT:%.*]]
 ; CHECK:       callfoo:
-; CHECK-NEXT:    call void @foo(i32 1)
+; CHECK-NEXT:    call void @foo(i32 [[SELECT2]])
 ; CHECK-NEXT:    br label [[EXIT]]
 ; CHECK:       exit:
 ; CHECK-NEXT:    ret i32 42
@@ -64,10 +65,11 @@ exit:
 define i32 @compare_against_one(i32 %x) {
 ; CHECK-LABEL: @compare_against_one(
 ; CHECK-NEXT:  entry:
-; CHECK-NEXT:    [[TMP0:%.*]] = icmp sgt i32 [[X:%.*]], 1
-; CHECK-NEXT:    br i1 [[TMP0]], label [[CALLFOO:%.*]], label [[EXIT:%.*]]
+; CHECK-NEXT:    [[SELECT2:%.*]] = call i32 @llvm.scompare.i32.i32(i32 [[X:%.*]], i32 1)
+; CHECK-NEXT:    [[COND:%.*]] = icmp sgt i32 [[SELECT2]], 0
+; CHECK-NEXT:    br i1 [[COND]], label [[CALLFOO:%.*]], label [[EXIT:%.*]]
 ; CHECK:       callfoo:
-; CHECK-NEXT:    call void @foo(i32 1)
+; CHECK-NEXT:    call void @foo(i32 [[SELECT2]])
 ; CHECK-NEXT:    br label [[EXIT]]
 ; CHECK:       exit:
 ; CHECK-NEXT:    ret i32 42
@@ -120,10 +122,11 @@ exit:
 define i32 @compare_against_three(i32 %x) {
 ; CHECK-LABEL: @compare_against_three(
 ; CHECK-NEXT:  entry:
-; CHECK-NEXT:    [[TMP0:%.*]] = icmp sgt i32 [[X:%.*]], 3
-; CHECK-NEXT:    br i1 [[TMP0]], label [[CALLFOO:%.*]], label [[EXIT:%.*]]
+; CHECK-NEXT:    [[SELECT2:%.*]] = call i32 @llvm.scompare.i32.i32(i32 [[X:%.*]], i32 3)
+; CHECK-NEXT:    [[COND:%.*]] = icmp sgt i32 [[SELECT2]], 0
+; CHECK-NEXT:    br i1 [[COND]], label [[CALLFOO:%.*]], label [[EXIT:%.*]]
 ; CHECK:       callfoo:
-; CHECK-NEXT:    call void @foo(i32 1)
+; CHECK-NEXT:    call void @foo(i32 [[SELECT2]])
 ; CHECK-NEXT:    br label [[EXIT]]
 ; CHECK:       exit:
 ; CHECK-NEXT:    ret i32 42
@@ -148,10 +151,11 @@ exit:
 define i32 @compare_against_four(i32 %x) {
 ; CHECK-LABEL: @compare_against_four(
 ; CHECK-NEXT:  entry:
-; CHECK-NEXT:    [[TMP0:%.*]] = icmp sgt i32 [[X:%.*]], 4
-; CHECK-NEXT:    br i1 [[TMP0]], label [[CALLFOO:%.*]], label [[EXIT:%.*]]
+; CHECK-NEXT:    [[SELECT2:%.*]] = call i32 @llvm.scompare.i32.i32(i32 [[X:%.*]], i32 4)
+; CHECK-NEXT:    [[COND:%.*]] = icmp sgt i32 [[SELECT2]], 0
+; CHECK-NEXT:    br i1 [[COND]], label [[CALLFOO:%.*]], label [[EXIT:%.*]]
 ; CHECK:       callfoo:
-; CHECK-NEXT:    call void @foo(i32 1)
+; CHECK-NEXT:    call void @foo(i32 [[SELECT2]])
 ; CHECK-NEXT:    br label [[EXIT]]
 ; CHECK:       exit:
 ; CHECK-NEXT:    ret i32 42
@@ -176,10 +180,11 @@ exit:
 define i32 @compare_against_five(i32 %x) {
 ; CHECK-LABEL: @compare_against_five(
 ; CHECK-NEXT:  entry:
-; CHECK-NEXT:    [[TMP0:%.*]] = icmp sgt i32 [[X:%.*]], 5
-; CHECK-NEXT:    br i1 [[TMP0]], label [[CALLFOO:%.*]], label [[EXIT:%.*]]
+; CHECK-NEXT:    [[SELECT2:%.*]] = call i32 @llvm.scompare.i32.i32(i32 [[X:%.*]], i32 5)
+; CHECK-NEXT:    [[COND:%.*]] = icmp sgt i32 [[SELECT2]], 0
+; CHECK-NEXT:    br i1 [[COND]], label [[CALLFOO:%.*]], label [[EXIT:%.*]]
 ; CHECK:       callfoo:
-; CHECK-NEXT:    call void @foo(i32 1)
+; CHECK-NEXT:    call void @foo(i32 [[SELECT2]])
 ; CHECK-NEXT:    br label [[EXIT]]
 ; CHECK:       exit:
 ; CHECK-NEXT:    ret i32 42
@@ -204,10 +209,11 @@ exit:
 define i32 @compare_against_six(i32 %x) {
 ; CHECK-LABEL: @compare_against_six(
 ; CHECK-NEXT:  entry:
-; CHECK-NEXT:    [[TMP0:%.*]] = icmp sgt i32 [[X:%.*]], 6
-; CHECK-NEXT:    br i1 [[TMP0]], label [[CALLFOO:%.*]], label [[EXIT:%.*]]
+; CHECK-NEXT:    [[SELECT2:%.*]] = call i32 @llvm.scompare.i32.i32(i32 [[X:%.*]], i32 6)
+; CHECK-NEXT:    [[COND:%.*]] = icmp sgt i32 [[SELECT2]], 0
+; CHECK-NEXT:    br i1 [[COND]], label [[CALLFOO:%.*]], label [[EXIT:%.*]]
 ; CHECK:       callfoo:
-; CHECK-NEXT:    call void @foo(i32 1)
+; CHECK-NEXT:    call void @foo(i32 [[SELECT2]])
 ; CHECK-NEXT:    br label [[EXIT]]
 ; CHECK:       exit:
 ; CHECK-NEXT:    ret i32 42
@@ -348,10 +354,11 @@ exit:
 define i32 @compare_against_arbitrary_value_type_mismatch(i64 %x, i64 %c) {
 ; CHECK-LABEL: @compare_against_arbitrary_value_type_mismatch(
 ; CHECK-NEXT:  entry:
-; CHECK-NEXT:    [[TMP0:%.*]] = icmp sgt i64 [[X:%.*]], [[C:%.*]]
-; CHECK-NEXT:    br i1 [[TMP0]], label [[CALLFOO:%.*]], label [[EXIT:%.*]]
+; CHECK-NEXT:    [[SELECT2:%.*]] = call i32 @llvm.scompare.i32.i64(i64 [[X:%.*]], i64 [[C:%.*]])
+; CHECK-NEXT:    [[COND:%.*]] = icmp sgt i32 [[SELECT2]], 0
+; CHECK-NEXT:    br i1 [[COND]], label [[CALLFOO:%.*]], label [[EXIT:%.*]]
 ; CHECK:       callfoo:
-; CHECK-NEXT:    call void @foo(i32 1)
+; CHECK-NEXT:    call void @foo(i32 [[SELECT2]])
 ; CHECK-NEXT:    br label [[EXIT]]
 ; CHECK:       exit:
 ; CHECK-NEXT:    ret i32 42
@@ -376,10 +383,11 @@ exit:
 define i32 @compare_against_zero_type_mismatch_idiomatic(i64 %x) {
 ; CHECK-LABEL: @compare_against_zero_type_mismatch_idiomatic(
 ; CHECK-NEXT:  entry:
-; CHECK-NEXT:    [[TMP0:%.*]] = icmp sgt i64 [[X:%.*]], 0
-; CHECK-NEXT:    br i1 [[TMP0]], label [[CALLFOO:%.*]], label [[EXIT:%.*]]
+; CHECK-NEXT:    [[SELECT2:%.*]] = call i32 @llvm.scompare.i32.i64(i64 [[X:%.*]], i64 0)
+; CHECK-NEXT:    [[COND:%.*]] = icmp sgt i32 [[SELECT2]], 0
+; CHECK-NEXT:    br i1 [[COND]], label [[CALLFOO:%.*]], label [[EXIT:%.*]]
 ; CHECK:       callfoo:
-; CHECK-NEXT:    call void @foo(i32 1)
+; CHECK-NEXT:    call void @foo(i32 [[SELECT2]])
 ; CHECK-NEXT:    br label [[EXIT]]
 ; CHECK:       exit:
 ; CHECK-NEXT:    ret i32 42
@@ -461,10 +469,11 @@ declare void @use1(i1)
 define i32 @compare_against_fortytwo_commutatibility_0(i32 %x) {
 ; CHECK-LABEL: @compare_against_fortytwo_commutatibility_0(
 ; CHECK-NEXT:  entry:
-; CHECK-NEXT:    [[TMP0:%.*]] = icmp sgt i32 [[X:%.*]], 42
-; CHECK-NEXT:    br i1 [[TMP0]], label [[CALLFOO:%.*]], label [[EXIT:%.*]]
+; CHECK-NEXT:    [[SELECT2:%.*]] = call i32 @llvm.scompare.i32.i32(i32 [[X:%.*]], i32 42)
+; CHECK-NEXT:    [[COND:%.*]] = icmp sgt i32 [[SELECT2]], 0
+; CHECK-NEXT:    br i1 [[COND]], label [[CALLFOO:%.*]], label [[EXIT:%.*]]
 ; CHECK:       callfoo:
-; CHECK-NEXT:    call void @foo(i32 1)
+; CHECK-NEXT:    call void @foo(i32 [[SELECT2]])
 ; CHECK-NEXT:    br label [[EXIT]]
 ; CHECK:       exit:
 ; CHECK-NEXT:    ret i32 84
@@ -572,10 +581,11 @@ exit:
 define i32 @compare_against_arbitrary_value_commutativity0(i32 %x, i32 %c) {
 ; CHECK-LABEL: @compare_against_arbitrary_value_commutativity0(
 ; CHECK-NEXT:  entry:
-; CHECK-NEXT:    [[TMP0:%.*]] = icmp sgt i32 [[X:%.*]], [[C:%.*]]
-; CHECK-NEXT:    br i1 [[TMP0]], label [[CALLFOO:%.*]], label [[EXIT:%.*]]
+; CHECK-NEXT:    [[SELECT2:%.*]] = call i32 @llvm.scompare.i32.i32(i32 [[X:%.*]], i32 [[C:%.*]])
+; CHECK-NEXT:    [[COND:%.*]] = icmp sgt i32 [[SELECT2]], 0
+; CHECK-NEXT:    br i1 [[COND]], label [[CALLFOO:%.*]], label [[EXIT:%.*]]
 ; CHECK:       callfoo:
-; CHECK-NEXT:    call void @foo(i32 1)
+; CHECK-NEXT:    call void @foo(i32 [[SELECT2]])
 ; CHECK-NEXT:    br label [[EXIT]]
 ; CHECK:       exit:
 ; CHECK-NEXT:    ret i32 42
@@ -598,10 +608,11 @@ exit:
 define i32 @compare_against_arbitrary_value_commutativity1(i32 %x, i32 %c) {
 ; CHECK-LABEL: @compare_against_arbitrary_value_commutativity1(
 ; CHECK-NEXT:  entry:
-; CHECK-NEXT:    [[TMP0:%.*]] = icmp sgt i32 [[X:%.*]], [[C:%.*]]
-; CHECK-NEXT:    br i1 [[TMP0]], label [[CALLFOO:%.*]], label [[EXIT:%.*]]
+; CHECK-NEXT:    [[SELECT2:%.*]] = call i32 @llvm.scompare.i32.i32(i32 [[X:%.*]], i32 [[C:%.*]])
+; CHECK-NEXT:    [[COND:%.*]] = icmp sgt i32 [[SELECT2]], 0
+; CHECK-NEXT:    br i1 [[COND]], label [[CALLFOO:%.*]], label [[EXIT:%.*]]
 ; CHECK:       callfoo:
-; CHECK-NEXT:    call void @foo(i32 1)
+; CHECK-NEXT:    call void @foo(i32 [[SELECT2]])
 ; CHECK-NEXT:    br label [[EXIT]]
 ; CHECK:       exit:
 ; CHECK-NEXT:    ret i32 42

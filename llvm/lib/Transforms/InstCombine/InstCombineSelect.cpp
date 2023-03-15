@@ -1698,6 +1698,91 @@ static Value *foldSelectInstWithICmpConst(SelectInst &SI, ICmpInst *ICI,
   return nullptr;
 }
 
+/// canonicalize all variants of strong order compare to (a > b) - (a < b)
+static Value *canonicalizeThreeWayCmp(ICmpInst *ICI, Value *TrueVal,
+                                      Value *FalseVal,
+                                      InstCombiner::BuilderTy &Builder) {
+  if (!isa<Constant>(TrueVal))
+    return nullptr;
+
+  Type *Ty = TrueVal->getType();
+  ICmpInst::Predicate Pred = ICI->getPredicate();
+  Value *CmpLHS = ICI->getOperand(0);
+  Value *CmpRHS = ICI->getOperand(1);
+  Value *ICI2;
+  ICmpInst::Predicate Pred2;
+  Constant *InnerTC, *InnerFC;
+
+  auto CreateCmp = [&Builder, Ty](bool Signed, Value *LHS, Value *RHS) {
+    return Builder.CreateIntrinsic(
+        Ty, Signed ? Intrinsic::scompare : Intrinsic::ucompare, {LHS, RHS});
+  };
+
+  if (match(FalseVal, m_OneUse(m_Select(m_Value(ICI2), m_ImmConstant(InnerTC),
+                                        m_ImmConstant(InnerFC)))) &&
+      Pred == ICmpInst::ICMP_EQ && match(TrueVal, m_Zero()) &&
+      ICI->hasOneUse()) {
+    auto MatchCmp2 = [&](Value *LHS, Value *RHS) -> Value* {
+      if (match(ICI2, m_ICmp(Pred2, m_Specific(LHS), m_Specific(RHS)))) {
+        if (match(InnerTC, m_AllOnes()) && match(InnerFC, m_One())) {
+          // A == B ? 0 : (A s< B ? -1 : 1) --> llvm.scompare(A, B)
+          // A == B ? 0 : (A u< B ? -1 : 1) --> llvm.ucompare(A, B)
+          if (Pred2 == ICmpInst::ICMP_SLT || Pred2 == ICmpInst::ICMP_ULT)
+            return CreateCmp(Pred2 == ICmpInst::ICMP_SLT, LHS, RHS);
+          // A == B ? 0 : (A s> B ? -1 : 1) --> llvm.scompare(B, A)
+          // A == B ? 0 : (A u> B ? -1 : 1) --> llvm.ucompare(B, A)
+          if (Pred2 == ICmpInst::ICMP_SGT || Pred2 == ICmpInst::ICMP_UGT)
+            return CreateCmp(Pred2 == ICmpInst::ICMP_SGT, RHS, LHS);
+        }
+        if (match(InnerTC, m_One()) && match(InnerFC, m_AllOnes())) {
+          // A == B ? 0 : (A s> B ? 1 : -1) --> llvm.scompare(A, B)
+          // A == B ? 0 : (A u> B ? 1 : -1) --> llvm.scompare(A, B)
+          if (Pred2 == ICmpInst::ICMP_SGT || Pred2 == ICmpInst::ICMP_UGT)
+            return CreateCmp(Pred2 == ICmpInst::ICMP_SGT, LHS, RHS);
+          // A == B ? 0 : (A s< B ? 1 : -1) --> llvm.scompare(B, A)
+          // A == B ? 0 : (A u< B ? 1 : -1) --> llvm.scompare(B, A)
+          if (Pred2 == ICmpInst::ICMP_SLT || Pred2 == ICmpInst::ICMP_ULT)
+            return CreateCmp(Pred2 == ICmpInst::ICMP_SLT, RHS, LHS);
+        }
+      }
+      return nullptr;
+    };
+    if (Value *V = MatchCmp2(CmpLHS, CmpRHS))
+      return V;
+    if (Value *V = MatchCmp2(CmpRHS, CmpLHS))
+      return V;
+  }
+
+  if (match(TrueVal, m_AllOnes()) && match(FalseVal, m_ZExt(m_Value(ICI2))) &&
+      match(ICI2, m_ICmp(Pred2, m_Specific(CmpLHS), m_Specific(CmpRHS))) &&
+      (Pred2 != ICmpInst::ICMP_NE ||
+       (FalseVal->hasOneUse() && ICI2->hasOneUse()))) {
+    // A < B ? -1 : zext (A > B) --> (a > b) - (a < b)
+    // A < B ? -1 : zext (A != B) --> (a > b) - (a < b)
+    if ((Pred == ICmpInst::ICMP_SLT &&
+         (Pred2 == ICmpInst::ICMP_NE || Pred2 == ICmpInst::ICMP_SGT)) ||
+        (Pred == ICmpInst::ICMP_ULT &&
+         (Pred2 == ICmpInst::ICMP_NE || Pred2 == ICmpInst::ICMP_UGT))) {
+      return CreateCmp(Pred == ICmpInst::ICMP_SLT, CmpLHS, CmpRHS);
+    }
+  }
+
+  if (match(TrueVal, m_One()) && match(FalseVal, m_SExt(m_Value(ICI2))) &&
+      match(ICI2, m_ICmp(Pred2, m_Specific(CmpLHS), m_Specific(CmpRHS))) &&
+      (Pred2 != ICmpInst::ICMP_NE ||
+       (FalseVal->hasOneUse() && ICI2->hasOneUse()))) {
+    // A > B ? 1 : sext (A < B) --> (a > b) - (a < b)
+    // A > B ? 1 : sext (A != B) --> (a > b) - (a < b)
+    if ((Pred == ICmpInst::ICMP_SGT &&
+         (Pred2 == ICmpInst::ICMP_NE || Pred2 == ICmpInst::ICMP_SLT)) ||
+        (Pred == ICmpInst::ICMP_UGT &&
+         (Pred2 == ICmpInst::ICMP_NE || Pred2 == ICmpInst::ICMP_ULT))) {
+      return CreateCmp(Pred == ICmpInst::ICMP_SGT, CmpLHS, CmpRHS);
+    }
+  }
+  return nullptr;
+}
+
 /// Visit a SelectInst that has an ICmpInst as its first operand.
 Instruction *InstCombinerImpl::foldSelectInstWithICmp(SelectInst &SI,
                                                       ICmpInst *ICI) {
@@ -1739,6 +1824,9 @@ Instruction *InstCombinerImpl::foldSelectInstWithICmp(SelectInst &SI,
       Changed = true;
     }
   }
+
+  if (Value *V = canonicalizeThreeWayCmp(ICI, TrueVal, FalseVal, Builder))
+    return replaceInstUsesWith(SI, V);
 
   // Canonicalize a signbit condition to use zero constant by swapping:
   // (CmpLHS > -1) ? TV : FV --> (CmpLHS < 0) ? FV : TV
