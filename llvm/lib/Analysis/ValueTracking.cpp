@@ -7557,14 +7557,16 @@ std::optional<bool> llvm::isImpliedCondition(const Value *LHS, const Value *RHS,
 // Returns a pair (Condition, ConditionIsTrue), where Condition is a branch
 // condition dominating ContextI or nullptr, if no condition is found.
 static std::pair<Value *, bool>
-getDomPredecessorCondition(const Instruction *ContextI) {
-  if (!ContextI || !ContextI->getParent())
-    return {nullptr, false};
-
-  // TODO: This is a poor/cheap way to determine dominance. Should we use a
-  // dominator tree (eg, from a SimplifyQuery) instead?
-  const BasicBlock *ContextBB = ContextI->getParent();
-  const BasicBlock *PredBB = ContextBB->getSinglePredecessor();
+getDomPredecessorCondition(const BasicBlock *ContextBB,
+                           const DominatorTree *DT) {
+  const BasicBlock *PredBB = nullptr;
+  if (DT) {
+    if (const auto *DTNode = DT->getNode(ContextBB))
+      if (const auto *IDomNode = DTNode->getIDom())
+        PredBB = IDomNode->getBlock();
+  } else {
+    PredBB = ContextBB->getSinglePredecessor();
+  }
   if (!PredBB)
     return {nullptr, false};
 
@@ -7578,6 +7580,17 @@ getDomPredecessorCondition(const Instruction *ContextI) {
   if (TrueBB == FalseBB)
     return {nullptr, false};
 
+  if (DT) {
+    BasicBlockEdge TrueEdge(PredBB, TrueBB);
+    if (DT->dominates(TrueEdge, ContextBB))
+      return {PredCond, true};
+
+    BasicBlockEdge FalseEdge(PredBB, FalseBB);
+    if (DT->dominates(FalseEdge, ContextBB))
+      return {PredCond, false};
+
+    return {nullptr, false};
+  }
   assert((TrueBB == ContextBB || FalseBB == ContextBB) &&
          "Predecessor block does not point to successor?");
 
@@ -7587,20 +7600,28 @@ getDomPredecessorCondition(const Instruction *ContextI) {
 
 std::optional<bool> llvm::isImpliedByDomCondition(const Value *Cond,
                                                   const Instruction *ContextI,
-                                                  const DataLayout &DL) {
+                                                  const DataLayout &DL,
+                                                  const DominatorTree *DT) {
   assert(Cond->getType()->isIntOrIntVectorTy(1) && "Condition must be bool");
-  auto PredCond = getDomPredecessorCondition(ContextI);
+  if (!ContextI || !ContextI->getParent())
+    return std::nullopt;
+
+  const BasicBlock *BB = ContextI->getParent();
+  auto PredCond = getDomPredecessorCondition(BB, DT);
   if (PredCond.first)
     return isImpliedCondition(PredCond.first, Cond, DL, PredCond.second);
   return std::nullopt;
 }
 
-std::optional<bool> llvm::isImpliedByDomCondition(CmpInst::Predicate Pred,
-                                                  const Value *LHS,
-                                                  const Value *RHS,
-                                                  const Instruction *ContextI,
-                                                  const DataLayout &DL) {
-  auto PredCond = getDomPredecessorCondition(ContextI);
+std::optional<bool>
+llvm::isImpliedByDomCondition(CmpInst::Predicate Pred, const Value *LHS,
+                              const Value *RHS, const Instruction *ContextI,
+                              const DataLayout &DL, const DominatorTree *DT) {
+  if (!ContextI || !ContextI->getParent())
+    return std::nullopt;
+
+  const BasicBlock *BB = ContextI->getParent();
+  auto PredCond = getDomPredecessorCondition(BB, DT);
   if (PredCond.first)
     return isImpliedCondition(PredCond.first, Pred, LHS, RHS, DL,
                               PredCond.second);
