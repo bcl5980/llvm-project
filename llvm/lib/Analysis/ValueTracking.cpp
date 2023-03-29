@@ -5609,7 +5609,7 @@ OverflowResult llvm::computeOverflowForUnsignedSub(const Value *LHS,
   if (match(CxtI,
             m_Intrinsic<Intrinsic::usub_with_overflow>(m_Value(), m_Value())))
     if (auto C =
-            isImpliedByDomCondition(CmpInst::ICMP_UGE, LHS, RHS, CxtI, DL)) {
+            isImpliedByDomCondition(CmpInst::ICMP_UGE, LHS, RHS, CxtI, DL, DT)) {
       if (*C)
         return OverflowResult::NeverOverflows;
       return OverflowResult::AlwaysOverflowsLow;
