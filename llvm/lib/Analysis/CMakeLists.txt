@@ -57,6 +57,7 @@ add_llvm_component_library(LLVMAnalysis
   DependenceGraphBuilder.cpp
   DevelopmentModeInlineAdvisor.cpp
   DivergenceAnalysis.cpp
+  DomConditionAnalysis.cpp
   DomPrinter.cpp
   DomTreeUpdater.cpp
   DominanceFrontier.cpp

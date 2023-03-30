@@ -30,6 +30,7 @@ class AddOperator;
 class AllocaInst;
 class APInt;
 class AssumptionCache;
+class DomConditionInfo;
 class DominatorTree;
 class GEPOperator;
 class LoadInst;
@@ -962,13 +963,12 @@ std::optional<bool> isImpliedCondition(const Value *LHS,
 /// if it is known based on dominating conditions.
 std::optional<bool> isImpliedByDomCondition(const Value *Cond,
                                             const Instruction *ContextI,
-                                            const DataLayout &DL,
-                                            const DominatorTree *DT = nullptr);
+                                            const DataLayout &DL);
 std::optional<bool> isImpliedByDomCondition(CmpInst::Predicate Pred,
                                             const Value *LHS, const Value *RHS,
                                             const Instruction *ContextI,
                                             const DataLayout &DL,
-                                            const DominatorTree *DT = nullptr);
+                                            const DomConditionInfo *DCI = nullptr);
 
 /// If Ptr1 is provably equal to Ptr2 plus a constant offset, return that
 /// offset. For example, Ptr1 might be &A[42], and Ptr2 might be &A[40]. In

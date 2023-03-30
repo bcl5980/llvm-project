@@ -106,6 +106,7 @@ void initializeDelinearizationPass(PassRegistry&);
 void initializeDemandedBitsWrapperPassPass(PassRegistry&);
 void initializeDependenceAnalysisWrapperPassPass(PassRegistry&);
 void initializeDetectDeadLanesPass(PassRegistry&);
+void initializeDomConditionWrapperPass(PassRegistry&);
 void initializeDomOnlyPrinterWrapperPassPass(PassRegistry &);
 void initializeDomOnlyViewerWrapperPassPass(PassRegistry &);
 void initializeDomPrinterWrapperPassPass(PassRegistry &);

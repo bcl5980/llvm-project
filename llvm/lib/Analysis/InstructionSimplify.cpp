@@ -26,6 +26,7 @@
 #include "llvm/Analysis/CaptureTracking.h"
 #include "llvm/Analysis/CmpInstAnalysis.h"
 #include "llvm/Analysis/ConstantFolding.h"
+#include "llvm/Analysis/DomConditionAnalysis.h"
 #include "llvm/Analysis/InstSimplifyFolder.h"
 #include "llvm/Analysis/LoopAnalysisManager.h"
 #include "llvm/Analysis/MemoryBuiltins.h"
@@ -757,7 +758,7 @@ static Value *simplifyByDomEq(unsigned Opcode, Value *Op0, Value *Op1,
     return nullptr;
 
   std::optional<bool> Imp =
-      isImpliedByDomCondition(CmpInst::ICMP_EQ, Op0, Op1, Q.CxtI, Q.DL, Q.DT);
+      isImpliedByDomCondition(CmpInst::ICMP_EQ, Op0, Op1, Q.CxtI, Q.DL, Q.DCI);
   if (Imp && *Imp) {
     Type *Ty = Op0->getType();
     switch (Opcode) {
@@ -3968,7 +3969,7 @@ static Value *simplifyICmpInst(unsigned Predicate, Value *LHS, Value *RHS,
     return V;
 
   if (std::optional<bool> Res =
-          isImpliedByDomCondition(Pred, LHS, RHS, Q.CxtI, Q.DL, Q.DT))
+          isImpliedByDomCondition(Pred, LHS, RHS, Q.CxtI, Q.DL, Q.DCI))
     return ConstantInt::getBool(ITy, *Res);
 
   // Simplify comparisons of related pointers using a powerful, recursive
@@ -4785,7 +4786,7 @@ static Value *simplifySelectInst(Value *Cond, Value *TrueVal, Value *FalseVal,
   if (Value *V = foldSelectWithBinaryOp(Cond, TrueVal, FalseVal))
     return V;
 
-  std::optional<bool> Imp = isImpliedByDomCondition(Cond, Q.CxtI, Q.DL, Q.DT);
+  std::optional<bool> Imp = isImpliedByDomCondition(Cond, Q.CxtI, Q.DL);
   if (Imp)
     return *Imp ? TrueVal : FalseVal;
 
@@ -6901,7 +6902,9 @@ const SimplifyQuery getBestSimplifyQuery(Pass &P, Function &F) {
   auto *TLI = TLIWP ? &TLIWP->getTLI(F) : nullptr;
   auto *ACWP = P.getAnalysisIfAvailable<AssumptionCacheTracker>();
   auto *AC = ACWP ? &ACWP->getAssumptionCache(F) : nullptr;
-  return {F.getParent()->getDataLayout(), TLI, DT, AC};
+  auto *DCWP = P.getAnalysisIfAvailable<DomConditionWrapper>();
+  auto *DCI = DCWP ? &DCWP->getDomConditionInfo() : nullptr;
+  return {F.getParent()->getDataLayout(), TLI, DT, AC, nullptr, true, true, DCI};
 }
 
 const SimplifyQuery getBestSimplifyQuery(LoopStandardAnalysisResults &AR,
@@ -6915,7 +6918,8 @@ const SimplifyQuery getBestSimplifyQuery(AnalysisManager<T, TArgs...> &AM,
   auto *DT = AM.template getCachedResult<DominatorTreeAnalysis>(F);
   auto *TLI = AM.template getCachedResult<TargetLibraryAnalysis>(F);
   auto *AC = AM.template getCachedResult<AssumptionAnalysis>(F);
-  return {F.getParent()->getDataLayout(), TLI, DT, AC};
+  auto *DCI = AM.template getCachedResult<DomConditionAnalysis>(F);
+  return {F.getParent()->getDataLayout(), TLI, DT, AC, nullptr, true, true, DCI};
 }
 template const SimplifyQuery getBestSimplifyQuery(AnalysisManager<Function> &,
                                                   Function &);

@@ -26,6 +26,7 @@
 #include "llvm/Analysis/AssumeBundleQueries.h"
 #include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/Analysis/ConstantFolding.h"
+#include "llvm/Analysis/DomConditionAnalysis.h"
 #include "llvm/Analysis/GuardUtils.h"
 #include "llvm/Analysis/InstructionSimplify.h"
 #include "llvm/Analysis/Loads.h"
@@ -5609,7 +5610,7 @@ OverflowResult llvm::computeOverflowForUnsignedSub(const Value *LHS,
   if (match(CxtI,
             m_Intrinsic<Intrinsic::usub_with_overflow>(m_Value(), m_Value())))
     if (auto C =
-            isImpliedByDomCondition(CmpInst::ICMP_UGE, LHS, RHS, CxtI, DL, DT)) {
+            isImpliedByDomCondition(CmpInst::ICMP_UGE, LHS, RHS, CxtI, DL)) {
       if (*C)
         return OverflowResult::NeverOverflows;
       return OverflowResult::AlwaysOverflowsLow;
@@ -7557,13 +7558,18 @@ std::optional<bool> llvm::isImpliedCondition(const Value *LHS, const Value *RHS,
 // Returns a pair (Condition, ConditionIsTrue), where Condition is a branch
 // condition dominating ContextI or nullptr, if no condition is found.
 static std::pair<Value *, bool>
-getDomPredecessorCondition(const BasicBlock *ContextBB,
-                           const DominatorTree *DT) {
+getDomPredecessorCondition(const Instruction *ContextI, const Value *LHS,
+                           const Value *RHS, const DomConditionInfo *DCI) {
+  if (!ContextI || !ContextI->getParent())
+    return {nullptr, false};
+
+  const BasicBlock *ContextBB = ContextI->getParent();
   const BasicBlock *PredBB = nullptr;
-  if (DT) {
-    if (const auto *DTNode = DT->getNode(ContextBB))
-      if (const auto *IDomNode = DTNode->getIDom())
-        PredBB = IDomNode->getBlock();
+  CmpInst::Predicate PredCmp;
+  if (DCI) {
+    auto DomPred = DCI->getDominatingCondition(ContextBB, LHS, RHS);
+    PredBB = DomPred.first;
+    PredCmp = DomPred.second;
   } else {
     PredBB = ContextBB->getSinglePredecessor();
   }
@@ -7580,15 +7586,9 @@ getDomPredecessorCondition(const BasicBlock *ContextBB,
   if (TrueBB == FalseBB)
     return {nullptr, false};
 
-  if (DT) {
-    BasicBlockEdge TrueEdge(PredBB, TrueBB);
-    if (DT->dominates(TrueEdge, ContextBB))
-      return {PredCond, true};
-
-    BasicBlockEdge FalseEdge(PredBB, FalseBB);
-    if (DT->dominates(FalseEdge, ContextBB))
-      return {PredCond, false};
-
+  if (DCI) {
+    if (auto *ICmp = dyn_cast<ICmpInst>(PredCond))
+      return {PredCond, ICmp->getPredicate() == PredCmp};
     return {nullptr, false};
   }
   assert((TrueBB == ContextBB || FalseBB == ContextBB) &&
@@ -7600,28 +7600,21 @@ getDomPredecessorCondition(const BasicBlock *ContextBB,
 
 std::optional<bool> llvm::isImpliedByDomCondition(const Value *Cond,
                                                   const Instruction *ContextI,
-                                                  const DataLayout &DL,
-                                                  const DominatorTree *DT) {
+                                                  const DataLayout &DL) {
   assert(Cond->getType()->isIntOrIntVectorTy(1) && "Condition must be bool");
-  if (!ContextI || !ContextI->getParent())
-    return std::nullopt;
-
-  const BasicBlock *BB = ContextI->getParent();
-  auto PredCond = getDomPredecessorCondition(BB, DT);
+  auto PredCond = getDomPredecessorCondition(ContextI, nullptr, nullptr, nullptr);
   if (PredCond.first)
     return isImpliedCondition(PredCond.first, Cond, DL, PredCond.second);
   return std::nullopt;
 }
 
-std::optional<bool>
-llvm::isImpliedByDomCondition(CmpInst::Predicate Pred, const Value *LHS,
-                              const Value *RHS, const Instruction *ContextI,
-                              const DataLayout &DL, const DominatorTree *DT) {
-  if (!ContextI || !ContextI->getParent())
-    return std::nullopt;
-
-  const BasicBlock *BB = ContextI->getParent();
-  auto PredCond = getDomPredecessorCondition(BB, DT);
+std::optional<bool> llvm::isImpliedByDomCondition(CmpInst::Predicate Pred,
+                                                  const Value *LHS,
+                                                  const Value *RHS,
+                                                  const Instruction *ContextI,
+                                                  const DataLayout &DL,
+                                                  const DomConditionInfo *DCI) {
+  auto PredCond = getDomPredecessorCondition(ContextI, LHS, RHS, DCI);
   if (PredCond.first)
     return isImpliedCondition(PredCond.first, Pred, LHS, RHS, DL,
                               PredCond.second);
