@@ -34,6 +34,9 @@ private:
   // Map from basic block to the list of conditions that dominate it.
   SmallDenseMap<const BasicBlock *, DomCondVector, 8> DomCondMap;
 
+  void InsertDomCondition(DominatorTree &DT, BasicBlock *BB, Instruction *Term,
+                          Instruction *Cond, bool TrueEdge, bool FalseEdge);
+
 public:
   DomConditionInfo() {}
   DomConditionInfo(Function &F, DominatorTree &DT);

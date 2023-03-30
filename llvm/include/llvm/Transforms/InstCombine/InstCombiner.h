@@ -88,10 +88,11 @@ public:
                TargetLibraryInfo &TLI, TargetTransformInfo &TTI,
                DominatorTree &DT, OptimizationRemarkEmitter &ORE,
                BlockFrequencyInfo *BFI, ProfileSummaryInfo *PSI,
-               const DataLayout &DL, LoopInfo *LI)
+               const DataLayout &DL, LoopInfo *LI, DomConditionInfo *DCI)
       : TTI(TTI), Builder(Builder), Worklist(Worklist),
         MinimizeSize(MinimizeSize), AA(AA), AC(AC), TLI(TLI), DT(DT), DL(DL),
-        SQ(DL, &TLI, &DT, &AC), ORE(ORE), BFI(BFI), PSI(PSI), LI(LI) {}
+        SQ(DL, &TLI, &DT, &AC, nullptr, true, true, DCI), ORE(ORE), BFI(BFI),
+        PSI(PSI), LI(LI) {}
 
   virtual ~InstCombiner() = default;
 

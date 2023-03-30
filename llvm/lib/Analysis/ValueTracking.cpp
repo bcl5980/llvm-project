@@ -7558,21 +7558,14 @@ std::optional<bool> llvm::isImpliedCondition(const Value *LHS, const Value *RHS,
 // Returns a pair (Condition, ConditionIsTrue), where Condition is a branch
 // condition dominating ContextI or nullptr, if no condition is found.
 static std::pair<Value *, bool>
-getDomPredecessorCondition(const Instruction *ContextI, const Value *LHS,
-                           const Value *RHS, const DomConditionInfo *DCI) {
+getDomPredecessorCondition(const Instruction *ContextI) {
   if (!ContextI || !ContextI->getParent())
     return {nullptr, false};
 
+  // TODO: This is a poor/cheap way to determine dominance. Should we use a
+  // dominator tree (eg, from a SimplifyQuery) instead?
   const BasicBlock *ContextBB = ContextI->getParent();
-  const BasicBlock *PredBB = nullptr;
-  CmpInst::Predicate PredCmp;
-  if (DCI) {
-    auto DomPred = DCI->getDominatingCondition(ContextBB, LHS, RHS);
-    PredBB = DomPred.first;
-    PredCmp = DomPred.second;
-  } else {
-    PredBB = ContextBB->getSinglePredecessor();
-  }
+  const BasicBlock *PredBB = ContextBB->getSinglePredecessor();
   if (!PredBB)
     return {nullptr, false};
 
@@ -7586,11 +7579,6 @@ getDomPredecessorCondition(const Instruction *ContextI, const Value *LHS,
   if (TrueBB == FalseBB)
     return {nullptr, false};
 
-  if (DCI) {
-    if (auto *ICmp = dyn_cast<ICmpInst>(PredCond))
-      return {PredCond, ICmp->getPredicate() == PredCmp};
-    return {nullptr, false};
-  }
   assert((TrueBB == ContextBB || FalseBB == ContextBB) &&
          "Predecessor block does not point to successor?");
 
@@ -7602,7 +7590,7 @@ std::optional<bool> llvm::isImpliedByDomCondition(const Value *Cond,
                                                   const Instruction *ContextI,
                                                   const DataLayout &DL) {
   assert(Cond->getType()->isIntOrIntVectorTy(1) && "Condition must be bool");
-  auto PredCond = getDomPredecessorCondition(ContextI, nullptr, nullptr, nullptr);
+  auto PredCond = getDomPredecessorCondition(ContextI);
   if (PredCond.first)
     return isImpliedCondition(PredCond.first, Cond, DL, PredCond.second);
   return std::nullopt;
@@ -7614,10 +7602,20 @@ std::optional<bool> llvm::isImpliedByDomCondition(CmpInst::Predicate Pred,
                                                   const Instruction *ContextI,
                                                   const DataLayout &DL,
                                                   const DomConditionInfo *DCI) {
-  auto PredCond = getDomPredecessorCondition(ContextI, LHS, RHS, DCI);
+  auto PredCond = getDomPredecessorCondition(ContextI);
   if (PredCond.first)
     return isImpliedCondition(PredCond.first, Pred, LHS, RHS, DL,
                               PredCond.second);
+
+  if (DCI) {
+    if (!ContextI || !ContextI->getParent())
+      return std::nullopt;
+
+    const BasicBlock *BB = ContextI->getParent();
+    auto DomCond = DCI->getDominatingCondition(BB, LHS, RHS);
+    if (DomCond.first)
+      return isImpliedCondMatchingOperands(DomCond.second, Pred, false);
+  }
   return std::nullopt;
 }
 

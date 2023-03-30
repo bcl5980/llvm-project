@@ -7,51 +7,71 @@
 //===----------------------------------------------------------------------===//
 
 #include "llvm/Analysis/DomConditionAnalysis.h"
+#include "llvm/IR/PatternMatch.h"
 #include "llvm/InitializePasses.h"
 
 using namespace llvm;
+using namespace PatternMatch;
 
 #define DEBUG_TYPE "dom-condition-analysis"
+
+void DomConditionInfo::InsertDomCondition(DominatorTree &DT, BasicBlock *BB,
+                                          Instruction *Term, Instruction *Cond,
+                                          bool TrueEdge, bool FalseEdge) {
+  const auto *IDomBB = Term->getParent();
+
+  Value *X, *Y;
+  // We only handle the case where the terminator is an icmp for now.
+  if (const auto *Cmp = dyn_cast<ICmpInst>(Cond)) {
+    if (TrueEdge) {
+      auto *TrueBB = Term->getSuccessor(0);
+      BasicBlockEdge TrueEdge(IDomBB, TrueBB);
+      if (DT.dominates(TrueEdge, BB))
+        DomCondMap[BB].push_back({IDomBB, Cmp->getOperand(0),
+                                  Cmp->getOperand(1), Cmp->getPredicate()});
+    }
+    if (FalseEdge) {
+      auto *FalseBB = Term->getSuccessor(1);
+      BasicBlockEdge FalseEdge(IDomBB, FalseBB);
+      if (DT.dominates(FalseEdge, BB))
+        DomCondMap[BB].push_back({IDomBB, Cmp->getOperand(0),
+                                  Cmp->getOperand(1),
+                                  Cmp->getInversePredicate()});
+    }
+  } else if (match(Cond, m_LogicalAnd(m_Value(X), m_Value(Y)))) {
+    if (auto *I = dyn_cast<Instruction>(X))
+      InsertDomCondition(DT, BB, Term, I, true, false);
+    if (auto *I = dyn_cast<Instruction>(Y))
+      InsertDomCondition(DT, BB, Term, I, true, false);
+  } else if (match(Cond, m_LogicalOr(m_Value(X), m_Value(Y)))) {
+    if (auto *I = dyn_cast<Instruction>(X))
+      InsertDomCondition(DT, BB, Term, I, false, true);
+    if (auto *I = dyn_cast<Instruction>(Y))
+      InsertDomCondition(DT, BB, Term, I, false, true);
+  }
+}
 
 DomConditionInfo::DomConditionInfo(Function &F, DominatorTree &DT) {
   for (auto &BB : F) {
     if (BB.isEntryBlock())
       continue;
 
-    const auto *DTNode = DT.getNode(&BB);
+    auto *DTNode = DT.getNode(&BB);
     if (!DTNode)
       continue;
 
     while (DTNode->getIDom()) {
-      const auto *IDom = DTNode->getIDom();
-      const auto *IDomBB = IDom->getBlock();
+      auto *IDom = DTNode->getIDom();
+      auto *IDomBB = IDom->getBlock();
 
       // We only handle the case where the terminator has two successors for
       // now.
-      const auto *IDomTerm = IDomBB->getTerminator();
+      auto *IDomTerm = IDomBB->getTerminator();
       if (IDomTerm->getNumSuccessors() != 2)
         break;
 
-      const auto *IDomCond = dyn_cast<ICmpInst>(IDomTerm->getOperand(0));
-      // We only handle the case where the terminator is an icmp for now.
-      if (!IDomCond)
-        break;
-
-      // Check if the true edge dominates the current block.
-      const auto *TrueBB = IDomBB->getTerminator()->getSuccessor(0);
-      BasicBlockEdge TrueEdge(IDomBB, TrueBB);
-      if (DT.dominates(TrueEdge, &BB))
-        DomCondMap[&BB].push_back({IDomBB, IDomCond->getOperand(0),
-                                   IDomCond->getOperand(1),
-                                   IDomCond->getPredicate()});
-
-      // Check if the false edge dominates the current block.
-      const auto *FalseBB = IDomBB->getTerminator()->getSuccessor(1);
-      BasicBlockEdge FalseEdge(IDomBB, FalseBB);
-      if (DT.dominates(FalseEdge, &BB))
-        DomCondMap[&BB].push_back({IDomBB, IDomCond->getOperand(0),
-                                   IDomCond->getOperand(1),
-                                   IDomCond->getInversePredicate()});
+      if (auto *I = dyn_cast<Instruction>(IDomTerm->getOperand(0)))
+        InsertDomCondition(DT, &BB, IDomTerm, I, true, true);
       DTNode = IDom;
       continue;
     }

@@ -49,6 +49,7 @@ class APInt;
 class AssumptionCache;
 class BlockFrequencyInfo;
 class DataLayout;
+class DomConditionInfo;
 class DominatorTree;
 class GEPOperator;
 class GlobalVariable;
@@ -67,9 +68,9 @@ public:
                    TargetLibraryInfo &TLI, TargetTransformInfo &TTI,
                    DominatorTree &DT, OptimizationRemarkEmitter &ORE,
                    BlockFrequencyInfo *BFI, ProfileSummaryInfo *PSI,
-                   const DataLayout &DL, LoopInfo *LI)
+                   const DataLayout &DL, LoopInfo *LI, DomConditionInfo *DCI)
       : InstCombiner(Worklist, Builder, MinimizeSize, AA, AC, TLI, TTI, DT, ORE,
-                     BFI, PSI, DL, LI) {}
+                     BFI, PSI, DL, LI, DCI) {}
 
   virtual ~InstCombinerImpl() = default;
 
