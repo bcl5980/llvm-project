@@ -35,7 +35,6 @@
 #include "llvm/Analysis/DemandedBits.h"
 #include "llvm/Analysis/DependenceAnalysis.h"
 #include "llvm/Analysis/DivergenceAnalysis.h"
-#include "llvm/Analysis/DomConditionAnalysis.h"
 #include "llvm/Analysis/DomPrinter.h"
 #include "llvm/Analysis/DominanceFrontier.h"
 #include "llvm/Analysis/FunctionPropertiesAnalysis.h"

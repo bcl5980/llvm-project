@@ -4677,10 +4677,10 @@ PreservedAnalyses InstCombinePass::run(Function &F,
   auto *BFI = (PSI && PSI->hasProfileSummary()) ?
       &AM.getResult<BlockFrequencyAnalysis>(F) : nullptr;
 
-  DomConditionInfo DCI(F, DT);
+  // DomConditionInfo DCI(F, DT);
   if (!combineInstructionsOverFunction(F, Worklist, AA, AC, TLI, TTI, DT, ORE,
                                        BFI, PSI, Options.MaxIterations, LI,
-                                       &DCI))
+                                       nullptr))
     // No changes, all analyses are preserved.
     return PreservedAnalyses::all();
 
@@ -4728,9 +4728,9 @@ bool InstructionCombiningPass::runOnFunction(Function &F) {
           ? &getAnalysis<LazyBlockFrequencyInfoPass>().getBFI()
           : nullptr;
 
-  DomConditionInfo DCI(F, DT);
+  // DomConditionInfo DCI(F, DT);
   return combineInstructionsOverFunction(F, Worklist, AA, AC, TLI, TTI, DT, ORE,
-                                         BFI, PSI, MaxIterations, LI, &DCI);
+                                         BFI, PSI, MaxIterations, LI, nullptr);
 }
 
 char InstructionCombiningPass::ID = 0;

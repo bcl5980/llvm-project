@@ -26,7 +26,6 @@
 #include "llvm/Analysis/CaptureTracking.h"
 #include "llvm/Analysis/CmpInstAnalysis.h"
 #include "llvm/Analysis/ConstantFolding.h"
-#include "llvm/Analysis/DomConditionAnalysis.h"
 #include "llvm/Analysis/InstSimplifyFolder.h"
 #include "llvm/Analysis/LoopAnalysisManager.h"
 #include "llvm/Analysis/MemoryBuiltins.h"
@@ -6902,9 +6901,7 @@ const SimplifyQuery getBestSimplifyQuery(Pass &P, Function &F) {
   auto *TLI = TLIWP ? &TLIWP->getTLI(F) : nullptr;
   auto *ACWP = P.getAnalysisIfAvailable<AssumptionCacheTracker>();
   auto *AC = ACWP ? &ACWP->getAssumptionCache(F) : nullptr;
-  auto *DCWP = P.getAnalysisIfAvailable<DomConditionWrapper>();
-  auto *DCI = DCWP ? &DCWP->getDomConditionInfo() : nullptr;
-  return {F.getParent()->getDataLayout(), TLI, DT, AC, nullptr, true, true, DCI};
+  return {F.getParent()->getDataLayout(), TLI, DT, AC};
 }
 
 const SimplifyQuery getBestSimplifyQuery(LoopStandardAnalysisResults &AR,
@@ -6918,8 +6915,7 @@ const SimplifyQuery getBestSimplifyQuery(AnalysisManager<T, TArgs...> &AM,
   auto *DT = AM.template getCachedResult<DominatorTreeAnalysis>(F);
   auto *TLI = AM.template getCachedResult<TargetLibraryAnalysis>(F);
   auto *AC = AM.template getCachedResult<AssumptionAnalysis>(F);
-  auto *DCI = AM.template getCachedResult<DomConditionAnalysis>(F);
-  return {F.getParent()->getDataLayout(), TLI, DT, AC, nullptr, true, true, DCI};
+  return {F.getParent()->getDataLayout(), TLI, DT, AC};
 }
 template const SimplifyQuery getBestSimplifyQuery(AnalysisManager<Function> &,
                                                   Function &);

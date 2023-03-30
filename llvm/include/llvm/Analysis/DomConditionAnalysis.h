@@ -48,55 +48,7 @@ public:
   void clear() { DomCondMap.clear(); }
 };
 
-// Dominate condition analysis pass.
-class DomConditionAnalysis : public AnalysisInfoMixin<DomConditionAnalysis> {
-  friend AnalysisInfoMixin<DomConditionAnalysis>;
 
-  static AnalysisKey Key;
-
-public:
-  using Result = DomConditionInfo;
-
-  // Run the analysis pass over a function and produce DomConditionInfo.
-  Result run(Function &F, FunctionAnalysisManager &AM);
-};
-
-// Printer pass for DomConditionAnalysis.
-struct DomConditionAnalysisPrinterPass
-    : public PassInfoMixin<DomConditionAnalysisPrinterPass> {
-  DomConditionAnalysisPrinterPass(raw_ostream &OS) : OS(OS) {}
-
-  PreservedAnalyses run(Function &F, FunctionAnalysisManager &FAM);
-
-private:
-  raw_ostream &OS;
-}; // class DomConditionAnalysisPrinterPass
-
-/// Legacy analysis pass which computes a \c DomConditionInfo.
-class DomConditionWrapper : public FunctionPass {
-  DomConditionInfo DCI;
-
-public:
-  static char ID;
-
-  DomConditionWrapper();
-
-  DomConditionInfo &getDomConditionInfo() { return DCI; }
-  const DomConditionInfo &getDomConditionInfo() const { return DCI; }
-
-  bool runOnFunction(Function &F) override;
-
-  void verifyAnalysis() const override;
-
-  void getAnalysisUsage(AnalysisUsage &AU) const override {
-    AU.setPreservesAll();
-  }
-
-  void releaseMemory() override { DCI.clear(); }
-
-  void print(raw_ostream &OS, const Module *M = nullptr) const override;
-};
-
-}; // namespace llvm
+} // namespace llvm
 
 #endif // LLVM_ANALYSIS_DOMCONDITIONANALYSIS_H

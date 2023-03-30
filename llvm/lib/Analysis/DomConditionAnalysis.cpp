@@ -8,12 +8,9 @@
 
 #include "llvm/Analysis/DomConditionAnalysis.h"
 #include "llvm/IR/PatternMatch.h"
-#include "llvm/InitializePasses.h"
 
 using namespace llvm;
 using namespace PatternMatch;
-
-#define DEBUG_TYPE "dom-condition-analysis"
 
 void DomConditionInfo::InsertDomCondition(DominatorTree &DT, BasicBlock *BB,
                                           Instruction *Term, Instruction *Cond,
@@ -103,45 +100,4 @@ DomConditionInfo::getDominatingCondition(const BasicBlock *BB, const Value *LHS,
       return {Cond.DomBB, CmpInst::getSwappedPredicate(Cond.Pred)};
   }
   return {nullptr, CmpInst::BAD_ICMP_PREDICATE};
-}
-
-AnalysisKey DomConditionAnalysis::Key;
-
-DomConditionAnalysis::Result
-DomConditionAnalysis::run(Function &F, FunctionAnalysisManager &AM) {
-  auto &DT = AM.getResult<DominatorTreeAnalysis>(F);
-  return DomConditionInfo(F, DT);
-}
-
-PreservedAnalyses
-DomConditionAnalysisPrinterPass::run(Function &F,
-                                     FunctionAnalysisManager &FAM) {
-  auto &DCA = FAM.getResult<DomConditionAnalysis>(F);
-  OS << "'Dominate Condition Analysis for function '" << F.getName() << "':\n";
-  DCA.print(OS);
-  return PreservedAnalyses::all();
-}
-
-char DomConditionWrapper::ID = 0;
-
-DomConditionWrapper::DomConditionWrapper() : FunctionPass(ID), DCI() {
-  initializeDomConditionWrapperPass(*PassRegistry::getPassRegistry());
-}
-
-INITIALIZE_PASS_BEGIN(DomConditionWrapper, DEBUG_TYPE,
-                      "Generate dominate condition info", false, true)
-INITIALIZE_PASS_DEPENDENCY(DominatorTreeWrapperPass)
-INITIALIZE_PASS_END(DomConditionWrapper, DEBUG_TYPE,
-                    "Generate dominate condition info", false, true)
-
-bool DomConditionWrapper::runOnFunction(Function &F) {
-  auto &DT = getAnalysis<DominatorTreeWrapperPass>().getDomTree();
-  DCI = DomConditionInfo(F, DT);
-  return false;
-}
-
-void DomConditionWrapper::verifyAnalysis() const {}
-
-void DomConditionWrapper::print(raw_ostream &OS, const Module *) const {
-  DCI.print(OS);
 }
