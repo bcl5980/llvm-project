@@ -45,6 +45,7 @@ class AssumptionCache;
 class BinaryOperator;
 class CallBase;
 class DataLayout;
+class DomConditionInfo;
 class DominatorTree;
 class Function;
 class Instruction;
@@ -106,6 +107,8 @@ struct SimplifyQuery {
   /// allowed to assume a particular value for a use of undef for example.
   bool CanUseUndef = true;
 
+  const DomConditionInfo *DCI = nullptr;
+
   SimplifyQuery(const DataLayout &DL, const Instruction *CXTI = nullptr)
       : DL(DL), CxtI(CXTI) {}
 
@@ -113,9 +116,9 @@ struct SimplifyQuery {
                 const DominatorTree *DT = nullptr,
                 AssumptionCache *AC = nullptr,
                 const Instruction *CXTI = nullptr, bool UseInstrInfo = true,
-                bool CanUseUndef = true)
+                bool CanUseUndef = true, const DomConditionInfo *DCI = nullptr)
       : DL(DL), TLI(TLI), DT(DT), AC(AC), CxtI(CXTI), IIQ(UseInstrInfo),
-        CanUseUndef(CanUseUndef) {}
+        CanUseUndef(CanUseUndef), DCI(DCI) {}
   SimplifyQuery getWithInstruction(Instruction *I) const {
     SimplifyQuery Copy(*this);
     Copy.CxtI = I;

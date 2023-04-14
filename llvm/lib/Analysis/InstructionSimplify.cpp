@@ -757,7 +757,7 @@ static Value *simplifyByDomEq(unsigned Opcode, Value *Op0, Value *Op1,
     return nullptr;
 
   std::optional<bool> Imp =
-      isImpliedByDomCondition(CmpInst::ICMP_EQ, Op0, Op1, Q.CxtI, Q.DL);
+      isImpliedByDomCondition(CmpInst::ICMP_EQ, Op0, Op1, Q.CxtI, Q.DL, Q.DCI);
   if (Imp && *Imp) {
     Type *Ty = Op0->getType();
     switch (Opcode) {
@@ -3972,7 +3972,7 @@ static Value *simplifyICmpInst(unsigned Predicate, Value *LHS, Value *RHS,
     return V;
 
   if (std::optional<bool> Res =
-          isImpliedByDomCondition(Pred, LHS, RHS, Q.CxtI, Q.DL))
+          isImpliedByDomCondition(Pred, LHS, RHS, Q.CxtI, Q.DL, Q.DCI))
     return ConstantInt::getBool(ITy, *Res);
 
   // Simplify comparisons of related pointers using a powerful, recursive

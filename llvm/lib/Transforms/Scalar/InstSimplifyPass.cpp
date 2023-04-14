@@ -10,6 +10,7 @@
 #include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/ADT/Statistic.h"
 #include "llvm/Analysis/AssumptionCache.h"
+#include "llvm/Analysis/DomConditionAnalysis.h"
 #include "llvm/Analysis/InstructionSimplify.h"
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/IR/Dominators.h"
@@ -93,14 +94,14 @@ struct InstSimplifyLegacyPass : public FunctionPass {
     if (skipFunction(F))
       return false;
 
-    const DominatorTree *DT =
-        &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
+    DominatorTree *DT = &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
     const TargetLibraryInfo *TLI =
         &getAnalysis<TargetLibraryInfoWrapperPass>().getTLI(F);
     AssumptionCache *AC =
         &getAnalysis<AssumptionCacheTracker>().getAssumptionCache(F);
     const DataLayout &DL = F.getParent()->getDataLayout();
-    const SimplifyQuery SQ(DL, TLI, DT, AC);
+    DomConditionInfo DCI(F, *DT);
+    const SimplifyQuery SQ(DL, TLI, DT, AC, nullptr, true, true, &DCI);
     return runImpl(F, SQ);
   }
 };
@@ -126,7 +127,8 @@ PreservedAnalyses InstSimplifyPass::run(Function &F,
   auto &TLI = AM.getResult<TargetLibraryAnalysis>(F);
   auto &AC = AM.getResult<AssumptionAnalysis>(F);
   const DataLayout &DL = F.getParent()->getDataLayout();
-  const SimplifyQuery SQ(DL, &TLI, &DT, &AC);
+  DomConditionInfo DCI(F, DT);
+  const SimplifyQuery SQ(DL, &TLI, &DT, &AC, nullptr, true, true, &DCI);
   bool Changed = runImpl(F, SQ);
   if (!Changed)
     return PreservedAnalyses::all();

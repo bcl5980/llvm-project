@@ -26,6 +26,7 @@
 #include "llvm/Analysis/AssumeBundleQueries.h"
 #include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/Analysis/ConstantFolding.h"
+#include "llvm/Analysis/DomConditionAnalysis.h"
 #include "llvm/Analysis/GuardUtils.h"
 #include "llvm/Analysis/InstructionSimplify.h"
 #include "llvm/Analysis/Loads.h"
@@ -7647,12 +7648,21 @@ std::optional<bool> llvm::isImpliedByDomCondition(CmpInst::Predicate Pred,
                                                   const Value *LHS,
                                                   const Value *RHS,
                                                   const Instruction *ContextI,
-                                                  const DataLayout &DL) {
+                                                  const DataLayout &DL,
+                                                  const DomConditionInfo *DCI) {
+  std::optional<bool> IsImplied = std::nullopt;
   auto PredCond = getDomPredecessorCondition(ContextI);
   if (PredCond.first)
-    return isImpliedCondition(PredCond.first, Pred, LHS, RHS, DL,
-                              PredCond.second);
-  return std::nullopt;
+    IsImplied =
+        isImpliedCondition(PredCond.first, Pred, LHS, RHS, DL, PredCond.second);
+
+  if (DCI && IsImplied == std::nullopt && ContextI && ContextI->getParent()) {
+    const BasicBlock *BB = ContextI->getParent();
+    auto DomCond = DCI->getDominatingCondition(BB, LHS, RHS);
+    if (DomCond.first)
+      IsImplied = isImpliedCondMatchingOperands(DomCond.second, Pred, false);
+  }
+  return IsImplied;
 }
 
 static void setLimitsForBinOp(const BinaryOperator &BO, APInt &Lower,
